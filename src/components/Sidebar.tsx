@@ -10,7 +10,8 @@ import {
   Image as ImageIcon, 
   FileImage, 
   PenTool,
-  FileCheck
+  FileCheck,
+  Type
 } from 'lucide-react';
 import { ToolType } from '../types';
 
@@ -23,6 +24,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ currentTool, onSelectTool, hasFile }) => {
   const tools = [
     { id: 'reader' as ToolType, label: 'Visualizador PDF', icon: BookOpen, desc: 'Ler e navegar' },
+    { id: 'trueedit' as ToolType, label: 'Editar Texto do PDF', icon: Type, desc: 'Substituição direta', isNew: true },
     { id: 'merge' as ToolType, label: 'Juntar PDFs', icon: Files, desc: 'Unir vários arquivos' },
     { id: 'split' as ToolType, label: 'Dividir PDF', icon: Scissors, desc: 'Extrair páginas' },
     { id: 'organize' as ToolType, label: 'Organizar Páginas', icon: LayoutGrid, desc: 'Girar e reordenar' },
@@ -31,7 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTool, onSelectTool, has
     { id: 'protect' as ToolType, label: 'Proteger PDF', icon: ShieldCheck, desc: 'Adicionar senha' },
     { id: 'pdf-to-img' as ToolType, label: 'PDF para Imagem', icon: ImageIcon, desc: 'Exportar PNG / JPG' },
     { id: 'img-to-pdf' as ToolType, label: 'Imagens para PDF', icon: FileImage, desc: 'Converter fotos em PDF' },
-    { id: 'edit' as ToolType, label: 'Editar & Anotar', icon: PenTool, desc: 'Texto e notas' },
+    { id: 'edit' as ToolType, label: 'Anotar & Notas', icon: PenTool, desc: 'Inserir notas' },
   ];
 
   return (
@@ -82,7 +84,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTool, onSelectTool, has
                 <Icon className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="truncate leading-tight font-medium">{t.label}</div>
+                <div className="flex items-center gap-1.5">
+                  <span className="truncate leading-tight font-medium">{t.label}</span>
+                  {t.isNew && (
+                    <span className="text-[9px] font-bold bg-brand-500 text-white px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                      NOVO
+                    </span>
+                  )}
+                </div>
                 <div className="text-[11px] text-slate-400 truncate">{t.desc}</div>
               </div>
             </button>

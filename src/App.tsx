@@ -11,6 +11,7 @@ import { ProtectTool } from './components/Tools/ProtectTool';
 import { ConvertTool } from './components/Tools/ConvertTool';
 import { ImagesToPdfTool } from './components/Tools/ImagesToPdfTool';
 import { EditTool } from './components/Tools/EditTool';
+import { DirectTextEditTool } from './components/Tools/DirectTextEditTool';
 import { ToolType, PDFFileInfo } from './types';
 import { PDFService } from './services/pdfService';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
@@ -106,6 +107,7 @@ export const App: React.FC = () => {
 
   const toolLabels: Record<ToolType, string> = {
     reader: 'Leitor e Visualizador de PDF',
+    trueedit: 'Editar Texto do PDF (TrueEdit)',
     merge: 'Juntar PDFs',
     split: 'Dividir PDF',
     organize: 'Organizar Páginas',
@@ -114,7 +116,7 @@ export const App: React.FC = () => {
     protect: 'Proteger com Senha',
     'pdf-to-img': 'PDF para Imagem',
     'img-to-pdf': 'Imagens para PDF',
-    edit: 'Editar & Anotar',
+    edit: 'Anotar & Notas',
   };
 
   return (
@@ -140,6 +142,15 @@ export const App: React.FC = () => {
         <main className="flex-1 flex overflow-hidden relative">
           {currentTool === 'reader' && (
             <ReaderView file={currentFile} onOpenFile={handleOpenFile} />
+          )}
+
+          {currentTool === 'trueedit' && (
+            <DirectTextEditTool
+              currentFile={currentFile}
+              onOpenFile={handleOpenFile}
+              onShowMessage={showToast}
+              onFileUpdated={(newFile) => setCurrentFile(newFile)}
+            />
           )}
 
           {currentTool === 'merge' && (

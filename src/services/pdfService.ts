@@ -1,5 +1,6 @@
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
+import { DetectedTextItem, TextEditItem } from '../types';
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -240,6 +241,102 @@ export class PDFService {
           });
         }
       }
+    }
+
+    return await pdfDoc.save({ useObjectStreams: true });
+  }
+
+  /**
+   * Extrai todos os blocos de texto detectados em uma página com coordenadas PDF e Screen
+   */
+  static async extractPageTextItems(
+    data: ArrayBuffer,
+    pageNumber: number,
+    scale: number = 1.0
+  ): Promise<DetectedTextItem[]> {
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(data.slice(0)) });
+    const pdf = await loadingTask.promise;
+    const page = await pdf.getPage(pageNumber);
+    const textContent = await page.getTextContent();
+    const viewport = page.getViewport({ scale });
+
+    const items: DetectedTextItem[] = [];
+    for (let i = 0; i < textContent.items.length; i++) {
+      const item: any = textContent.items[i];
+      if (!item.str || item.str.trim() === '') continue;
+
+      const pdfX = item.transform[4];
+      const pdfY = item.transform[5];
+      const fontSize = Math.sqrt(item.transform[0] * item.transform[0] + item.transform[1] * item.transform[1]) || 12;
+      const pdfWidth = item.width || (fontSize * item.str.length * 0.55);
+      const pdfHeight = item.height || fontSize;
+
+      const rect: [number, number, number, number] = [pdfX, pdfY, pdfX + pdfWidth, pdfY + pdfHeight];
+      const [vX1, vY1, vX2, vY2] = viewport.convertToViewportRectangle(rect);
+      const screenLeft = Math.min(vX1, vX2);
+      const screenTop = Math.min(vY1, vY2);
+      const screenWidth = Math.max(Math.abs(vX2 - vX1), 10);
+      const screenHeight = Math.max(Math.abs(vY2 - vY1), 10);
+
+      items.push({
+        id: `txt-${pageNumber}-${i}`,
+        str: item.str,
+        pdfX,
+        pdfY,
+        pdfWidth,
+        pdfHeight,
+        fontSize,
+        screenLeft,
+        screenTop,
+        screenWidth,
+        screenHeight,
+      });
+    }
+
+    return items;
+  }
+
+  /**
+   * Aplica alterações diretas de texto no PDF (substituição / TrueEdit)
+   */
+  static async applyTextEdits(
+    data: ArrayBuffer,
+    edits: TextEditItem[]
+  ): Promise<Uint8Array> {
+    const pdfDoc = await PDFDocument.load(data, { ignoreEncryption: true });
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const pages = pdfDoc.getPages();
+
+    for (const edit of edits) {
+      const pageIndex = edit.pageNumber - 1;
+      if (pageIndex < 0 || pageIndex >= pages.length) continue;
+      const page = pages[pageIndex];
+
+      const padX = 1.5;
+      const padY = 2;
+      const newTextWidth = font.widthOfTextAtSize(edit.newText, edit.fontSize);
+      const maskWidth = Math.max(edit.pdfWidth, newTextWidth) + padX * 2;
+      const maskHeight = Math.max(edit.pdfHeight, edit.fontSize) + padY * 2;
+
+      // 1. Cobrir o texto antigo com uma máscara sólida limpa (geralmente branca ou cor de fundo)
+      const bg = edit.bgColor || { r: 1, g: 1, b: 1 };
+      page.drawRectangle({
+        x: edit.pdfX - padX,
+        y: edit.pdfY - padY,
+        width: maskWidth,
+        height: maskHeight,
+        color: rgb(bg.r, bg.g, bg.b),
+      });
+
+      // 2. Gravar o novo texto na posição exata
+      const fg = edit.textColor || { r: 0, g: 0, b: 0 };
+      page.drawText(edit.newText, {
+        x: edit.pdfX,
+        y: edit.pdfY,
+        size: edit.fontSize,
+        font,
+        color: rgb(fg.r, fg.g, fg.b),
+      });
     }
 
     return await pdfDoc.save({ useObjectStreams: true });

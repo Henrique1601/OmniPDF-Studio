@@ -1,5 +1,6 @@
 export type ToolType = 
   | 'reader'
+  | 'trueedit'
   | 'merge'
   | 'split'
   | 'organize'
@@ -17,6 +18,34 @@ export interface PDFFileInfo {
   size: number;
   pageCount?: number;
   data: ArrayBuffer;
+}
+
+export interface DetectedTextItem {
+  id: string;
+  str: string;
+  pdfX: number;
+  pdfY: number;
+  pdfWidth: number;
+  pdfHeight: number;
+  fontSize: number;
+  screenLeft: number;
+  screenTop: number;
+  screenWidth: number;
+  screenHeight: number;
+}
+
+export interface TextEditItem {
+  id: string;
+  pageNumber: number;
+  pdfX: number;
+  pdfY: number;
+  pdfWidth: number;
+  pdfHeight: number;
+  originalText: string;
+  newText: string;
+  fontSize: number;
+  textColor?: { r: number; g: number; b: number };
+  bgColor?: { r: number; g: number; b: number };
 }
 
 export interface ElectronAPI {

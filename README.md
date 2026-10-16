@@ -22,6 +22,7 @@ Ao executar o instalador `HbsPDFed Setup 1.0.0.exe`:
 
 | Ferramenta | Descrição |
 | :--- | :--- |
+| ✨ **Editar Texto do PDF (TrueEdit)** | **NOVIDADE:** Clique diretamente sobre qualquer texto existente no PDF, edite em tempo real ou use a ferramenta de Localizar e Substituir texto em lote! |
 | 📖 **Visualizador PDF** | Leitor interativo com miniaturas laterais, zoom contínuo, rotação e navegação ágil. |
 | 📑 **Juntar PDFs (Merge)** | Unifique 2 ou mais arquivos PDF em qualquer ordem desejada. |
 | ✂️ **Dividir PDF (Split)** | Extraia intervalos de páginas (ex: `1-3, 5, 8-10`) em novos documentos. |
@@ -31,7 +32,7 @@ Ao executar o instalador `HbsPDFed Setup 1.0.0.exe`:
 | 🔒 **Proteger com Senha** | Camada de segurança e integridade com proteção por senha. |
 | 🖼️ **PDF para Imagem** | Renderização em alta definição para arquivos PNG ou JPEG. |
 | 📸 **Imagens para PDF** | Conversão de fotos, recibos ou capturas de tela (PNG/JPG) em um PDF único. |
-| ✍️ **Editar & Anotar** | Inserção de textos e notas permanentes gravadas no PDF. |
+| ✍️ **Anotar & Notas** | Inserção de anotações e carimbos gravados no PDF. |
 
 ---
 
