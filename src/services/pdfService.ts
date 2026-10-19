@@ -499,6 +499,75 @@ export class PDFService {
   }
 
   /**
+   * Extrai todo o texto do documento estruturado por páginas
+   */
+  static async extractAllDocumentText(data: ArrayBuffer): Promise<{ pageNumber: number; text: string }[]> {
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(data.slice(0)) });
+    const pdf = await loadingTask.promise;
+    const numPages = pdf.numPages;
+    const results: { pageNumber: number; text: string }[] = [];
+
+    for (let i = 1; i <= numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items
+        .map((item: any) => item.str || '')
+        .join(' ');
+      results.push({ pageNumber: i, text: pageText.trim() });
+    }
+
+    return results;
+  }
+
+  /**
+   * Aplica censura/redação permanente em áreas confidenciais (CPF, senhas, etc.)
+   */
+  static async applyRedactions(
+    data: ArrayBuffer,
+    redactions: {
+      pageNumber: number;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      overlayText?: string;
+    }[]
+  ): Promise<Uint8Array> {
+    const pdfDoc = await PDFDocument.load(data, { ignoreEncryption: true });
+    const pages = pdfDoc.getPages();
+    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    for (const r of redactions) {
+      const pIndex = r.pageNumber - 1;
+      if (pIndex < 0 || pIndex >= pages.length) continue;
+      const page = pages[pIndex];
+
+      page.drawRectangle({
+        x: r.x - 2,
+        y: r.y - 2,
+        width: r.width + 4,
+        height: r.height + 4,
+        color: rgb(0, 0, 0),
+      });
+
+      if (r.overlayText) {
+        const text = r.overlayText;
+        const fontSize = Math.min(8, Math.max(5, r.height * 0.5));
+        const textWidth = font.widthOfTextAtSize(text, fontSize);
+        page.drawText(text, {
+          x: r.x + (r.width - textWidth) / 2,
+          y: r.y + (r.height - fontSize) / 2,
+          size: fontSize,
+          font,
+          color: rgb(1, 1, 1),
+        });
+      }
+    }
+
+    return await pdfDoc.save({ useObjectStreams: true });
+  }
+
+  /**
    * Utilitário para criar Blob seguro sem erros de tipo
    */
   static createBlob(bytes: Uint8Array, mimeType: string = 'application/pdf'): Blob {

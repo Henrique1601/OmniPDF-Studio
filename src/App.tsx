@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { TopNav } from './components/TopNav';
 import { ReaderView } from './components/ReaderView';
@@ -15,6 +15,11 @@ import { DirectTextEditTool } from './components/Tools/DirectTextEditTool';
 import { SignatureTool } from './components/Tools/SignatureTool';
 import { PageNumberTool } from './components/Tools/PageNumberTool';
 import { HighlightTool } from './components/Tools/HighlightTool';
+import { AiChatTool } from './components/Tools/AiChatTool';
+import { OcrTool } from './components/Tools/OcrTool';
+import { RedactTool } from './components/Tools/RedactTool';
+import { CompareTool } from './components/Tools/CompareTool';
+import { BatchTool } from './components/Tools/BatchTool';
 import { ToolType, PDFFileInfo } from './types';
 import { PDFService } from './services/pdfService';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
@@ -94,7 +99,7 @@ export const App: React.FC = () => {
           showToast(`Arquivo salvo com sucesso em: ${savePath}`, 'success');
         }
       } else {
-        const blob = new Blob([currentFile.data], { type: 'application/pdf' });
+        const blob = PDFService.createBlob(new Uint8Array(currentFile.data));
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -111,6 +116,11 @@ export const App: React.FC = () => {
   const toolLabels: Record<ToolType, string> = {
     reader: 'Leitor e Visualizador de PDF',
     trueedit: 'Editar Texto do PDF (TrueEdit)',
+    'ai-chat': 'Chat com PDF & IA (Gemini 2.5)',
+    ocr: 'OCR Offline (Reconhecimento de Texto)',
+    redact: 'Censurar & Redigir (Privacidade)',
+    compare: 'Comparar PDFs (Diff Lado a Lado)',
+    batch: 'Processamento em Lote (Batch)',
     signature: 'Assinar PDF (Manuscrito)',
     numbering: 'Numeração de Páginas',
     highlight: 'Marca-Texto & Destaques',
@@ -157,6 +167,42 @@ export const App: React.FC = () => {
               onShowMessage={showToast}
               onFileUpdated={(newFile) => setCurrentFile(newFile)}
             />
+          )}
+
+          {currentTool === 'ai-chat' && (
+            <AiChatTool
+              currentFile={currentFile}
+              onOpenFile={handleOpenFile}
+              onShowMessage={showToast}
+            />
+          )}
+
+          {currentTool === 'ocr' && (
+            <OcrTool
+              currentFile={currentFile}
+              onOpenFile={handleOpenFile}
+              onShowMessage={showToast}
+            />
+          )}
+
+          {currentTool === 'redact' && (
+            <RedactTool
+              currentFile={currentFile}
+              onOpenFile={handleOpenFile}
+              onShowMessage={showToast}
+              onFileUpdated={(newFile) => setCurrentFile(newFile)}
+            />
+          )}
+
+          {currentTool === 'compare' && (
+            <CompareTool
+              initialFile={currentFile}
+              onShowMessage={showToast}
+            />
+          )}
+
+          {currentTool === 'batch' && (
+            <BatchTool />
           )}
 
           {currentTool === 'signature' && (
