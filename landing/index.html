@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniPDF Studio — A Mais Completa Suíte de PDF com TrueEdit & IA</title>
+  <meta name="description" content="OmniPDF Studio: Edite texto diretamente no PDF, use IA sem sair do computador, faça OCR, traduza documentos e processe arquivos em lote 100% offline.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#fff1f2',
+              100: '#ffe4e6',
+              500: '#f43f5e',
+              600: '#e11d48',
+              700: '#be123c',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#090d16] text-slate-100 font-sans selection:bg-brand-500 selection:text-white">
+
+  <!-- Glow Background -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+    <div class="absolute top-[-10%] left-[20%] w-[600px] h-[600px] rounded-full bg-brand-600/15 blur-[140px]"></div>
+    <div class="absolute top-[20%] right-[10%] w-[500px] h-[500px] rounded-full bg-indigo-600/15 blur-[160px]"></div>
+    <div class="absolute bottom-[-10%] left-[30%] w-[700px] h-[700px] rounded-full bg-blue-600/10 blur-[180px]"></div>
+  </div>
+
+  <!-- Navbar -->
+  <header class="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 via-rose-500 to-amber-500 flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <i data-lucide="file-check" class="w-5 h-5 text-white"></i>
+        </div>
+        <span class="font-extrabold text-lg tracking-tight text-white flex items-center gap-1.5">
+          OmniPDF
+          <span class="text-[10px] font-bold bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30">
+            STUDIO
+          </span>
+        </span>
+      </div>
+
+      <nav class="hidden md:flex items-center gap-8 text-xs font-semibold text-slate-400">
+        <a href="#features" class="hover:text-white transition-colors">Recursos</a>
+        <a href="#trueedit" class="hover:text-white transition-colors">TrueEdit</a>
+        <a href="#ai" class="hover:text-white transition-colors">Inteligência Artificial</a>
+        <a href="#security" class="hover:text-white transition-colors">Segurança</a>
+      </nav>
+
+      <div class="flex items-center gap-3">
+        <a 
+          href="https://github.com/Henrique1601/OmniPDF-Studio" 
+          target="_blank"
+          class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-colors"
+          title="Ver no GitHub"
+        >
+          <i data-lucide="github" class="w-4 h-4"></i>
+        </a>
+        <a 
+          href="https://github.com/Henrique1601/OmniPDF-Studio/releases/latest" 
+          class="px-4 py-2 bg-gradient-to-r from-brand-600 to-rose-600 hover:from-brand-700 hover:to-rose-700 text-white font-semibold text-xs rounded-xl shadow-lg shadow-brand-500/20 transition-all flex items-center gap-2"
+        >
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span>Baixar .EXE</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="pt-24 pb-20 px-6 text-center">
+    <div class="max-w-4xl mx-auto space-y-6">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/25 text-brand-400 text-xs font-semibold animate-pulse">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+        <span>OmniPDF Studio v1.0.0 Oficial para Windows</span>
+      </div>
+
+      <h1 class="text-4xl md:text-6xl font-extrabold text-white tracking-tight leading-tight">
+        A Mais Poderosa Suíte de PDF com <span class="bg-gradient-to-r from-brand-500 via-rose-400 to-amber-400 bg-clip-text text-transparent">Edição Direta</span> & IA Offline.
+      </h1>
+
+      <p class="text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
+        Esqueça assinaturas caras e conversores online inseguros. Altere textos nativos no documento com <strong>TrueEdit</strong>, audite contratos, traduza mantendo o layout e processe em lote 100% no seu PC.
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+        <a 
+          href="https://github.com/Henrique1601/OmniPDF-Studio/releases/latest/download/OmniPDF.Studio.Setup.1.0.0.exe"
+          class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-brand-600 via-rose-600 to-amber-600 hover:from-brand-700 hover:to-rose-700 text-white font-bold text-sm rounded-2xl shadow-xl shadow-brand-500/25 transition-all flex items-center justify-center gap-3 transform hover:-translate-y-0.5"
+        >
+          <i data-lucide="download" class="w-5 h-5"></i>
+          <span>Baixar OmniPDF Studio para Windows (x64)</span>
+        </a>
+        <a 
+          href="https://github.com/Henrique1601/OmniPDF-Studio" 
+          target="_blank"
+          class="w-full sm:w-auto px-6 py-4 bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold text-sm rounded-2xl border border-slate-800 transition-all flex items-center justify-center gap-2"
+        >
+          <i data-lucide="code" class="w-4 h-4"></i>
+          <span>Repositório GitHub</span>
+        </a>
+      </div>
+
+      <div class="flex items-center justify-center gap-6 pt-4 text-xs text-slate-500">
+        <span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i> 100% Offline & Privado</span>
+        <span class="flex items-center gap-1.5"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Sem Limites de Páginas</span>
+        <span class="flex items-center gap-1.5"><i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-400"></i> Auto-Update Integrado</span>
+      </div>
+    </div>
+
+    <!-- App Mockup Preview -->
+    <div class="max-w-5xl mx-auto mt-14 rounded-3xl p-3 bg-slate-900/60 border border-slate-800 shadow-2xl backdrop-blur-xl">
+      <div class="rounded-2xl bg-[#12141a] border border-slate-800/80 p-6 text-left space-y-6">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800/80">
+          <div class="flex items-center gap-3">
+            <div class="flex gap-1.5">
+              <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
+              <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
+              <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+            </div>
+            <span class="text-xs font-mono text-slate-500">OmniPDF Studio — Hub de Ferramentas</span>
+          </div>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">
+            v1.0.0 Ready
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="p-4 rounded-xl bg-slate-900 border border-purple-500/30">
+            <i data-lucide="sparkles" class="w-6 h-6 text-purple-400 mb-2"></i>
+            <h4 class="text-xs font-bold text-white">Chat com PDF (IA)</h4>
+            <p class="text-[11px] text-slate-400 mt-1">Gemini 2.5 Flash + Fallback Heurístico</p>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900 border border-amber-500/30">
+            <i data-lucide="type" class="w-6 h-6 text-amber-400 mb-2"></i>
+            <h4 class="text-xs font-bold text-white">TrueEdit In-Place</h4>
+            <p class="text-[11px] text-slate-400 mt-1">Edição direta de texto no PDF</p>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900 border border-cyan-500/30">
+            <i data-lucide="languages" class="w-6 h-6 text-cyan-400 mb-2"></i>
+            <h4 class="text-xs font-bold text-white">Tradutor de PDF</h4>
+            <p class="text-[11px] text-slate-400 mt-1">Tradução preservando o layout</p>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900 border border-rose-500/30">
+            <i data-lucide="scale" class="w-6 h-6 text-rose-400 mb-2"></i>
+            <h4 class="text-xs font-bold text-white">Auditor de Contratos</h4>
+            <p class="text-[11px] text-slate-400 mt-1">Score de risco e penalidades</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section id="features" class="py-20 px-6 border-t border-slate-800/80 bg-slate-950/40">
+    <div class="max-w-7xl mx-auto space-y-12">
+      <div class="text-center max-w-2xl mx-auto space-y-3">
+        <h2 class="text-2xl md:text-4xl font-extrabold text-white">Mais de 20 Ferramentas em Um Único App</h2>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Tudo o que você precisa para criar, modificar, proteger, assinar e analisar documentos PDF corporativos.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6">
+        <!-- Feature 1 -->
+        <div class="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+            <i data-lucide="type" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-sm font-bold text-white">TrueEdit (Exclusivo)</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Substitua qualquer texto, data ou valor diretamente no arquivo original com máscara de fundo e posicionamento pixel-perfect.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-sm font-bold text-white">IA Gemini 2.5 & Offline</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Faça perguntas sobre relatórios longos, peça resumos executivos ou execute tarefas sem precisar de conexão com a internet.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
+            <i data-lucide="search" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-sm font-bold text-white">Busca Semântica em Pastas (RAG)</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Aponte uma pasta com dezenas de PDFs e faça buscas instantâneas por frases, números ou termos jurídicos em frações de segundo.
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center">
+            <i data-lucide="unlock" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-sm font-bold text-white">Desbloqueador de Restrições</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Elimine travas que impedem impressão, seleção e cópia de textos em arquivos protegidos com 1 clique.
+          </p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-neutral-500/10 text-neutral-300 flex items-center justify-center">
+            <i data-lucide="eye-off" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-sm font-bold text-white">Censura & Redação (LGPD)</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Remoção permanente de CPF, e-mails, telefones e segredos comerciais através de tarjas pretas sobrepostas na estrutura binária.
+          </p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+            <i data-lucide="layers" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-sm font-bold text-white">Processamento em Lote</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Comprima, adicione marcas d'água, proteja com senha ou numere dezenas de documentos PDF ao mesmo tempo com alta velocidade.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-24 px-6 text-center">
+    <div class="max-w-3xl mx-auto space-y-6 p-10 rounded-3xl bg-gradient-to-tr from-brand-950/40 via-slate-900 to-indigo-950/40 border border-slate-800 shadow-2xl">
+      <h2 class="text-3xl font-extrabold text-white">Pronto para transformar sua rotina com PDFs?</h2>
+      <p class="text-xs text-slate-400 leading-relaxed max-w-lg mx-auto">
+        Baixe o instalador oficial do OmniPDF Studio para Windows e experimente a liberdade de um editor profissional sem mensalidades.
+      </p>
+
+      <div class="pt-2">
+        <a 
+          href="https://github.com/Henrique1601/OmniPDF-Studio/releases/latest/download/OmniPDF.Studio.Setup.1.0.0.exe"
+          class="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-brand-600 to-rose-600 hover:from-brand-700 hover:to-rose-700 text-white font-bold text-xs rounded-xl shadow-xl shadow-brand-500/25 transition-all"
+        >
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Download Gratuito para Windows</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-8 px-6 border-t border-slate-800/80 text-center text-xs text-slate-500 space-y-2">
+    <p>OmniPDF Studio © 2026. Desenvolvido com Antigravity & Global Master Agent.</p>
+    <p class="font-mono text-[11px]">Licença MIT • 100% Código Aberto e Seguro</p>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

@@ -23,10 +23,7 @@ node_modules/
 # Build outputs
 dist/
 dist-electron/
-dist-package/*.7z
-dist-package/*.blockmap
-dist-package/win-unpacked/
-dist-package/builder-debug.yml
+dist-package/
 
 # Environment variables
 .env

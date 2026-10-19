@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { TopNav } from './components/TopNav';
 import { ReaderView } from './components/ReaderView';
@@ -20,13 +20,37 @@ import { OcrTool } from './components/Tools/OcrTool';
 import { RedactTool } from './components/Tools/RedactTool';
 import { CompareTool } from './components/Tools/CompareTool';
 import { BatchTool } from './components/Tools/BatchTool';
-import { ToolType, PDFFileInfo } from './types';
+import { UnlockTool } from './components/Tools/UnlockTool';
+import { TranslatorTool } from './components/Tools/TranslatorTool';
+import { ContractAuditTool } from './components/Tools/ContractAuditTool';
+import { FolderRagTool } from './components/Tools/FolderRagTool';
+
+import { ToolsCatalogView } from './components/Views/ToolsCatalogView';
+import { HomeView } from './components/Views/HomeView';
+import { RecentsView } from './components/Views/RecentsView';
+import { TaskHistoryView } from './components/Views/TaskHistoryView';
+import { PreferencesView } from './components/Views/PreferencesView';
+
+import { ToolType, AppNavMode, PDFFileInfo, TaskHistoryItem } from './types';
 import { PDFService } from './services/pdfService';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [currentTool, setCurrentTool] = useState<ToolType>('reader');
+  const [currentNav, setCurrentNav] = useState<AppNavMode>('tools');
+  const [currentTool, setCurrentTool] = useState<ToolType | null>(null);
   const [currentFile, setCurrentFile] = useState<PDFFileInfo | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [hasUpdateAvailable, setHasUpdateAvailable] = useState(false);
+  const [recentFiles, setRecentFiles] = useState<PDFFileInfo[]>([]);
+  const [taskHistory, setTaskHistory] = useState<TaskHistoryItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('omnipdf_task_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -35,6 +59,42 @@ export const App: React.FC = () => {
       setToast(null);
     }, 4500);
   };
+
+  const recordTask = (toolName: string, fileName: string, status: 'success' | 'error', details?: string) => {
+    const item: TaskHistoryItem = {
+      id: `${Date.now()}-${Math.random()}`,
+      tool: toolName,
+      fileName,
+      timestamp: Date.now(),
+      status,
+      details
+    };
+    setTaskHistory(prev => {
+      const updated = [item, ...prev].slice(0, 50);
+      localStorage.setItem('omnipdf_task_history', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const addToRecents = (file: PDFFileInfo) => {
+    setRecentFiles(prev => {
+      const filtered = prev.filter(f => f.name !== file.name);
+      return [file, ...filtered].slice(0, 20);
+    });
+  };
+
+  useEffect(() => {
+    // Check auto update listener
+    if (window.electronAPI?.onUpdaterStatus) {
+      const unsubscribe = window.electronAPI.onUpdaterStatus((data) => {
+        if (data.status === 'available') {
+          setHasUpdateAvailable(true);
+          showToast(`Nova atualização v${data.version} encontrada!`, 'success');
+        }
+      });
+      return () => unsubscribe();
+    }
+  }, []);
 
   const handleOpenFile = async () => {
     try {
@@ -50,18 +110,21 @@ export const App: React.FC = () => {
           const name = filePath.split(/[\\/]/).pop() || 'documento.pdf';
           const pageCount = await PDFService.getPageCount(data);
 
-          setCurrentFile({
+          const fileInfo: PDFFileInfo = {
             id: Math.random().toString(),
             name,
             path: filePath,
             size: data.byteLength,
             pageCount,
             data,
-          });
+            lastOpened: Date.now()
+          };
+
+          setCurrentFile(fileInfo);
+          addToRecents(fileInfo);
           showToast(`Documento "${name}" carregado com sucesso!`, 'success');
         }
       } else {
-        // Web fallback input
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'application/pdf';
@@ -71,13 +134,17 @@ export const App: React.FC = () => {
           const data = await file.arrayBuffer();
           const pageCount = await PDFService.getPageCount(data);
 
-          setCurrentFile({
+          const fileInfo: PDFFileInfo = {
             id: Math.random().toString(),
             name: file.name,
             size: file.size,
             pageCount,
             data,
-          });
+            lastOpened: Date.now()
+          };
+
+          setCurrentFile(fileInfo);
+          addToRecents(fileInfo);
           showToast(`Documento "${file.name}" carregado!`, 'success');
         };
         input.click();
@@ -96,6 +163,7 @@ export const App: React.FC = () => {
         });
         if (savePath) {
           await window.electronAPI.writeFile(savePath, currentFile.data);
+          recordTask('Salvar Cópia', currentFile.name, 'success');
           showToast(`Arquivo salvo com sucesso em: ${savePath}`, 'success');
         }
       } else {
@@ -106,6 +174,7 @@ export const App: React.FC = () => {
         a.download = `Copia_${currentFile.name}`;
         a.click();
         URL.revokeObjectURL(url);
+        recordTask('Download', currentFile.name, 'success');
         showToast('Download do arquivo concluído!', 'success');
       }
     } catch (err: any) {
@@ -117,8 +186,12 @@ export const App: React.FC = () => {
     reader: 'Leitor e Visualizador de PDF',
     trueedit: 'Editar Texto do PDF (TrueEdit)',
     'ai-chat': 'Chat com PDF & IA (Gemini 2.5)',
+    translate: 'Traduzir PDF (Layout Seguro)',
+    'contract-audit': 'Auditor de Contratos & Riscos',
+    'folder-rag': 'Busca em Pastas (RAG Local)',
+    unlock: 'Desbloquear PDF (Remover Restrições)',
     ocr: 'OCR Offline (Reconhecimento de Texto)',
-    redact: 'Censurar & Redigir (Privacidade)',
+    redact: 'Censurar & Redigir (LGPD)',
     compare: 'Comparar PDFs (Diff Lado a Lado)',
     batch: 'Processamento em Lote (Batch)',
     signature: 'Assinar PDF (Manuscrito)',
@@ -135,27 +208,46 @@ export const App: React.FC = () => {
     edit: 'Anotar & Notas',
   };
 
+  const handleSelectTool = (tool: ToolType) => {
+    setCurrentTool(tool);
+  };
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans">
-      {/* Navigation Sidebar */}
+    <div className="flex h-screen w-screen overflow-hidden bg-[#090d16] text-slate-100 font-sans">
+      {/* Collapsible Sidebar (iLovePDF Hub match) */}
       <Sidebar
-        currentTool={currentTool}
-        onSelectTool={setCurrentTool}
-        hasFile={!!currentFile}
+        currentNav={currentNav}
+        onSelectNav={(nav) => {
+          setCurrentNav(nav);
+          setCurrentTool(null);
+        }}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
-      {/* Main App Container */}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+        {/* Top Header with Tabs */}
         <TopNav
+          currentNav={currentNav}
+          onSelectNav={setCurrentNav}
+          currentTool={currentTool}
+          onCloseTool={() => setCurrentTool(null)}
           currentFile={currentFile}
           onOpenFile={handleOpenFile}
           onSaveCurrentFile={handleSaveCurrentFile}
           onCloseFile={() => setCurrentFile(null)}
-          activeToolName={toolLabels[currentTool]}
+          activeToolName={currentTool ? toolLabels[currentTool] : 'Hub'}
+          hasUpdateAvailable={hasUpdateAvailable}
+          onOpenPreferences={() => {
+            setCurrentTool(null);
+            setCurrentNav('preferences');
+          }}
         />
 
-        {/* Viewport for Active Tool */}
+        {/* Viewport: Either Active Tool or Hub Nav View */}
         <main className="flex-1 flex overflow-hidden relative">
+          {/* Active Dedicated Tool Modes */}
           {currentTool === 'reader' && (
             <ReaderView file={currentFile} onOpenFile={handleOpenFile} />
           )}
@@ -165,7 +257,11 @@ export const App: React.FC = () => {
               currentFile={currentFile}
               onOpenFile={handleOpenFile}
               onShowMessage={showToast}
-              onFileUpdated={(newFile) => setCurrentFile(newFile)}
+              onFileUpdated={(newFile) => {
+                setCurrentFile(newFile);
+                addToRecents(newFile);
+                recordTask('TrueEdit', newFile.name, 'success');
+              }}
             />
           )}
 
@@ -174,6 +270,51 @@ export const App: React.FC = () => {
               currentFile={currentFile}
               onOpenFile={handleOpenFile}
               onShowMessage={showToast}
+            />
+          )}
+
+          {currentTool === 'translate' && (
+            <TranslatorTool
+              currentFile={currentFile}
+              onOpenFile={handleOpenFile}
+              onShowMessage={showToast}
+              onFileUpdated={(newFile) => {
+                setCurrentFile(newFile);
+                addToRecents(newFile);
+                recordTask('Tradutor', newFile.name, 'success');
+              }}
+            />
+          )}
+
+          {currentTool === 'contract-audit' && (
+            <ContractAuditTool
+              currentFile={currentFile}
+              onOpenFile={handleOpenFile}
+              onShowMessage={showToast}
+            />
+          )}
+
+          {currentTool === 'folder-rag' && (
+            <FolderRagTool
+              onLoadFileToApp={(file) => {
+                setCurrentFile(file);
+                addToRecents(file);
+                setCurrentTool('reader');
+              }}
+              onShowMessage={showToast}
+            />
+          )}
+
+          {currentTool === 'unlock' && (
+            <UnlockTool
+              currentFile={currentFile}
+              onOpenFile={handleOpenFile}
+              onShowMessage={showToast}
+              onFileUpdated={(newFile) => {
+                setCurrentFile(newFile);
+                addToRecents(newFile);
+                recordTask('Desbloquear PDF', newFile.name, 'success');
+              }}
             />
           )}
 
@@ -190,7 +331,11 @@ export const App: React.FC = () => {
               currentFile={currentFile}
               onOpenFile={handleOpenFile}
               onShowMessage={showToast}
-              onFileUpdated={(newFile) => setCurrentFile(newFile)}
+              onFileUpdated={(newFile) => {
+                setCurrentFile(newFile);
+                addToRecents(newFile);
+                recordTask('Censura LGPD', newFile.name, 'success');
+              }}
             />
           )}
 
@@ -210,7 +355,11 @@ export const App: React.FC = () => {
               currentFile={currentFile}
               onOpenFile={handleOpenFile}
               onShowMessage={showToast}
-              onFileUpdated={(newFile) => setCurrentFile(newFile)}
+              onFileUpdated={(newFile) => {
+                setCurrentFile(newFile);
+                addToRecents(newFile);
+                recordTask('Assinatura', newFile.name, 'success');
+              }}
             />
           )}
 
@@ -219,7 +368,11 @@ export const App: React.FC = () => {
               currentFile={currentFile}
               onOpenFile={handleOpenFile}
               onShowMessage={showToast}
-              onFileUpdated={(newFile) => setCurrentFile(newFile)}
+              onFileUpdated={(newFile) => {
+                setCurrentFile(newFile);
+                addToRecents(newFile);
+                recordTask('Numeração', newFile.name, 'success');
+              }}
             />
           )}
 
@@ -228,7 +381,11 @@ export const App: React.FC = () => {
               currentFile={currentFile}
               onOpenFile={handleOpenFile}
               onShowMessage={showToast}
-              onFileUpdated={(newFile) => setCurrentFile(newFile)}
+              onFileUpdated={(newFile) => {
+                setCurrentFile(newFile);
+                addToRecents(newFile);
+                recordTask('Marca-Texto', newFile.name, 'success');
+              }}
             />
           )}
 
@@ -294,6 +451,49 @@ export const App: React.FC = () => {
               onOpenFile={handleOpenFile}
               onShowMessage={showToast}
             />
+          )}
+
+          {/* Hub Views when no specific tool is active */}
+          {!currentTool && currentNav === 'home' && (
+            <HomeView
+              onOpenFile={handleOpenFile}
+              onSelectTool={handleSelectTool}
+              recentFiles={recentFiles}
+              onOpenRecent={(f) => {
+                setCurrentFile(f);
+                setCurrentTool('reader');
+              }}
+            />
+          )}
+
+          {!currentTool && currentNav === 'tools' && (
+            <ToolsCatalogView onSelectTool={handleSelectTool} />
+          )}
+
+          {!currentTool && currentNav === 'recents' && (
+            <RecentsView
+              recentFiles={recentFiles}
+              onOpenRecent={(f) => {
+                setCurrentFile(f);
+                setCurrentTool('reader');
+              }}
+              onClearRecents={() => setRecentFiles([])}
+              onOpenFile={handleOpenFile}
+            />
+          )}
+
+          {!currentTool && currentNav === 'history' && (
+            <TaskHistoryView
+              history={taskHistory}
+              onClearHistory={() => {
+                setTaskHistory([]);
+                localStorage.removeItem('omnipdf_task_history');
+              }}
+            />
+          )}
+
+          {!currentTool && currentNav === 'preferences' && (
+            <PreferencesView onShowMessage={showToast} />
           )}
 
           {/* Toast Notification */}

@@ -1,21 +1,33 @@
 import React from 'react';
-import { FolderOpen, Save, X, FileText, Info } from 'lucide-react';
-import { PDFFileInfo } from '../types';
+import { FolderOpen, Save, X, FileText, Info, Plus, Home, Bell, Sparkles } from 'lucide-react';
+import { PDFFileInfo, AppNavMode, ToolType } from '../types';
 
 interface TopNavProps {
+  currentNav: AppNavMode;
+  onSelectNav: (nav: AppNavMode) => void;
+  currentTool: ToolType | null;
+  onCloseTool: () => void;
   currentFile: PDFFileInfo | null;
   onOpenFile: () => void;
   onSaveCurrentFile?: () => void;
   onCloseFile?: () => void;
   activeToolName: string;
+  hasUpdateAvailable?: boolean;
+  onOpenPreferences: () => void;
 }
 
 export const TopNav: React.FC<TopNavProps> = ({
+  currentNav,
+  onSelectNav,
+  currentTool,
+  onCloseTool,
   currentFile,
   onOpenFile,
   onSaveCurrentFile,
   onCloseFile,
   activeToolName,
+  hasUpdateAvailable,
+  onOpenPreferences
 }) => {
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -24,50 +36,84 @@ export const TopNav: React.FC<TopNavProps> = ({
   };
 
   return (
-    <header className="h-14 bg-slate-900/90 backdrop-blur border-b border-slate-800 flex items-center justify-between px-4 shrink-0">
-      <div className="flex items-center space-x-3">
+    <header className="h-11 bg-[#18181b] border-b border-[#27272a] flex items-center justify-between px-3 shrink-0 select-none">
+      {/* Left: Tab bar (Exact iLovePDF match: Home tab, Document Tab, + Tab) */}
+      <div className="flex items-center gap-1.5 overflow-x-auto">
         <button
-          onClick={onOpenFile}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-sm transition-all active:scale-95"
+          onClick={() => {
+            onCloseTool();
+            onSelectNav('home');
+          }}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            currentNav === 'home' && !currentTool
+              ? 'bg-[#27272a] text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-[#27272a]/50'
+          }`}
         >
-          <FolderOpen className="w-4 h-4" />
-          <span>Abrir PDF</span>
+          <Home className="w-3.5 h-3.5" />
+          <span>Home</span>
         </button>
 
+        {currentTool && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#27272a] text-white text-xs font-medium border border-rose-500/30">
+            <Sparkles className="w-3 h-3 text-rose-400" />
+            <span className="truncate max-w-[140px]">{activeToolName}</span>
+            <button
+              onClick={onCloseTool}
+              title="Voltar ao Catálogo"
+              className="text-slate-400 hover:text-white p-0.5 rounded transition-colors ml-1"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
         {currentFile && (
-          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-xs">
-            <FileText className="w-4 h-4 text-brand-400" />
-            <span className="font-medium text-slate-200 max-w-[200px] truncate">
-              {currentFile.name}
-            </span>
-            <span className="text-slate-400 font-mono text-[11px]">
-              ({formatFileSize(currentFile.size)} • {currentFile.pageCount || 0} pág.)
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#27272a] text-slate-200 text-xs font-medium border border-[#3f3f46]">
+            <FileText className="w-3.5 h-3.5 text-rose-400" />
+            <span className="truncate max-w-[160px]">{currentFile.name}</span>
+            <span className="text-[10px] text-slate-400 font-mono">
+              ({formatFileSize(currentFile.size)})
             </span>
             {onCloseFile && (
               <button
                 onClick={onCloseFile}
                 title="Fechar arquivo"
-                className="text-slate-400 hover:text-rose-400 ml-1 p-0.5 rounded transition-colors"
+                className="text-slate-400 hover:text-rose-400 p-0.5 rounded transition-colors"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             )}
           </div>
         )}
+
+        <button
+          onClick={onOpenFile}
+          title="Abrir novo documento PDF"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#27272a] transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />
+        </button>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="text-xs text-slate-400 flex items-center gap-1.5">
-          <Info className="w-3.5 h-3.5 text-slate-400" />
-          <span>Modo: <strong className="text-slate-200 font-medium">{activeToolName}</strong></span>
-        </div>
+      {/* Right: Actions, Update Notification & Save */}
+      <div className="flex items-center gap-3">
+        {hasUpdateAvailable && (
+          <button
+            onClick={onOpenPreferences}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-semibold animate-pulse"
+          >
+            <Bell className="w-3 h-3" />
+            <span>Atualização Disponível!</span>
+          </button>
+        )}
 
         {currentFile && onSaveCurrentFile && (
           <button
             onClick={onSaveCurrentFile}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium shadow-sm transition-all active:scale-95"
           >
-            <Save className="w-3.5 h-3.5 text-slate-300" />
+            <Save className="w-3 h-3" />
             <span>Salvar Como</span>
           </button>
         )}
