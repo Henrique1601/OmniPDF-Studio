@@ -12,6 +12,9 @@ import { ConvertTool } from './components/Tools/ConvertTool';
 import { ImagesToPdfTool } from './components/Tools/ImagesToPdfTool';
 import { EditTool } from './components/Tools/EditTool';
 import { DirectTextEditTool } from './components/Tools/DirectTextEditTool';
+import { SignatureTool } from './components/Tools/SignatureTool';
+import { PageNumberTool } from './components/Tools/PageNumberTool';
+import { HighlightTool } from './components/Tools/HighlightTool';
 import { ToolType, PDFFileInfo } from './types';
 import { PDFService } from './services/pdfService';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
@@ -108,6 +111,9 @@ export const App: React.FC = () => {
   const toolLabels: Record<ToolType, string> = {
     reader: 'Leitor e Visualizador de PDF',
     trueedit: 'Editar Texto do PDF (TrueEdit)',
+    signature: 'Assinar PDF (Manuscrito)',
+    numbering: 'Numeração de Páginas',
+    highlight: 'Marca-Texto & Destaques',
     merge: 'Juntar PDFs',
     split: 'Dividir PDF',
     organize: 'Organizar Páginas',
@@ -146,6 +152,33 @@ export const App: React.FC = () => {
 
           {currentTool === 'trueedit' && (
             <DirectTextEditTool
+              currentFile={currentFile}
+              onOpenFile={handleOpenFile}
+              onShowMessage={showToast}
+              onFileUpdated={(newFile) => setCurrentFile(newFile)}
+            />
+          )}
+
+          {currentTool === 'signature' && (
+            <SignatureTool
+              currentFile={currentFile}
+              onOpenFile={handleOpenFile}
+              onShowMessage={showToast}
+              onFileUpdated={(newFile) => setCurrentFile(newFile)}
+            />
+          )}
+
+          {currentTool === 'numbering' && (
+            <PageNumberTool
+              currentFile={currentFile}
+              onOpenFile={handleOpenFile}
+              onShowMessage={showToast}
+              onFileUpdated={(newFile) => setCurrentFile(newFile)}
+            />
+          )}
+
+          {currentTool === 'highlight' && (
+            <HighlightTool
               currentFile={currentFile}
               onOpenFile={handleOpenFile}
               onShowMessage={showToast}

@@ -11,7 +11,10 @@ import {
   FileImage, 
   PenTool,
   FileCheck,
-  Type
+  Type,
+  FileSignature,
+  Hash,
+  Highlighter
 } from 'lucide-react';
 import { ToolType } from '../types';
 
@@ -25,6 +28,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTool, onSelectTool, has
   const tools = [
     { id: 'reader' as ToolType, label: 'Visualizador PDF', icon: BookOpen, desc: 'Ler e navegar' },
     { id: 'trueedit' as ToolType, label: 'Editar Texto do PDF', icon: Type, desc: 'Substituição direta', isNew: true },
+    { id: 'signature' as ToolType, label: 'Assinar PDF', icon: FileSignature, desc: 'Assinatura manuscrita', isNew: true },
+    { id: 'numbering' as ToolType, label: 'Numerar Páginas', icon: Hash, desc: 'Cabeçalho e rodapé', isNew: true },
+    { id: 'highlight' as ToolType, label: 'Marca-Texto', icon: Highlighter, desc: 'Destaques e grifos', isNew: true },
     { id: 'merge' as ToolType, label: 'Juntar PDFs', icon: Files, desc: 'Unir vários arquivos' },
     { id: 'split' as ToolType, label: 'Dividir PDF', icon: Scissors, desc: 'Extrair páginas' },
     { id: 'organize' as ToolType, label: 'Organizar Páginas', icon: LayoutGrid, desc: 'Girar e reordenar' },
@@ -40,17 +46,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTool, onSelectTool, has
     <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-full shrink-0">
       {/* Brand Header */}
       <div className="p-4 border-b border-slate-800 flex items-center space-x-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-rose-500 flex items-center justify-center shadow-lg shadow-brand-500/20">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-rose-500 to-amber-500 flex items-center justify-center shadow-lg shadow-brand-500/25">
           <FileCheck className="w-6 h-6 text-white" />
         </div>
         <div>
           <h1 className="font-bold text-lg text-white tracking-tight flex items-center gap-1.5">
-            HbsPDFed
-            <span className="text-[10px] font-semibold bg-brand-500/20 text-brand-400 px-1.5 py-0.5 rounded border border-brand-500/30">
-              PRO
+            OmniPDF
+            <span className="text-[10px] font-bold bg-gradient-to-r from-amber-500/30 to-brand-500/30 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/40">
+              STUDIO
             </span>
           </h1>
-          <p className="text-xs text-slate-400">PDF Reader & Editor</p>
+          <p className="text-xs text-slate-400">Suíte Completa de PDF</p>
         </div>
       </div>
 

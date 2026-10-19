@@ -1,6 +1,9 @@
 export type ToolType = 
   | 'reader'
   | 'trueedit'
+  | 'signature'
+  | 'numbering'
+  | 'highlight'
   | 'merge'
   | 'split'
   | 'organize'

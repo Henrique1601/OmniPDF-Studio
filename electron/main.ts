@@ -17,7 +17,7 @@ function createWindow() {
     height: 850,
     minWidth: 900,
     minHeight: 650,
-    title: 'HbsPDFed - Leitor & Editor de PDF',
+    title: 'OmniPDF Studio - Suíte Completa de PDF',
     backgroundColor: '#0f172a',
     autoHideMenuBar: true,
     webPreferences: {

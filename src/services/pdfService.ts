@@ -343,6 +343,162 @@ export class PDFService {
   }
 
   /**
+   * Adiciona numeração automática de páginas ou cabeçalho/rodapé
+   */
+  static async addPageNumbers(
+    data: ArrayBuffer,
+    options: {
+      format?: 'page-of-total' | 'simple' | 'custom';
+      position?: 'bottom-center' | 'bottom-right' | 'bottom-left' | 'top-center' | 'top-right' | 'top-left';
+      startFromPage?: number;
+      fontSize?: number;
+      margin?: number;
+      prefix?: string;
+    } = {}
+  ): Promise<Uint8Array> {
+    const pdfDoc = await PDFDocument.load(data, { ignoreEncryption: true });
+    const pages = pdfDoc.getPages();
+    const total = pages.length;
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    const startPage = Math.max(1, options.startFromPage || 1);
+    const fontSize = options.fontSize || 10;
+    const margin = options.margin || 30;
+    const pos = options.position || 'bottom-center';
+
+    for (let i = startPage - 1; i < total; i++) {
+      const page = pages[i];
+      const { width, height } = page.getSize();
+      const pageNum = i + 1;
+
+      let text = `${pageNum}`;
+      if (options.format === 'page-of-total') {
+        text = `Página ${pageNum} de ${total}`;
+      } else if (options.format === 'simple') {
+        text = `${pageNum}`;
+      } else if (options.prefix) {
+        text = `${options.prefix} ${pageNum}`;
+      }
+
+      const textWidth = font.widthOfTextAtSize(text, fontSize);
+      let x = width / 2 - textWidth / 2;
+      let y = margin;
+
+      if (pos === 'bottom-left') {
+        x = margin;
+        y = margin;
+      } else if (pos === 'bottom-right') {
+        x = width - margin - textWidth;
+        y = margin;
+      } else if (pos === 'bottom-center') {
+        x = width / 2 - textWidth / 2;
+        y = margin;
+      } else if (pos === 'top-left') {
+        x = margin;
+        y = height - margin - fontSize;
+      } else if (pos === 'top-center') {
+        x = width / 2 - textWidth / 2;
+        y = height - margin - fontSize;
+      } else if (pos === 'top-right') {
+        x = width - margin - textWidth;
+        y = height - margin - fontSize;
+      }
+
+      page.drawText(text, {
+        x,
+        y,
+        size: fontSize,
+        font,
+        color: rgb(0.3, 0.3, 0.3),
+      });
+    }
+
+    return await pdfDoc.save({ useObjectStreams: true });
+  }
+
+  /**
+   * Grava uma assinatura manuscrita (imagem PNG) na página do PDF
+   */
+  static async addSignature(
+    data: ArrayBuffer,
+    signaturePngDataUrl: string,
+    targetPage: number,
+    options: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }
+  ): Promise<Uint8Array> {
+    const pdfDoc = await PDFDocument.load(data, { ignoreEncryption: true });
+    const pages = pdfDoc.getPages();
+    const pageIndex = targetPage - 1;
+    if (pageIndex < 0 || pageIndex >= pages.length) {
+      throw new Error('Página inválida para assinatura.');
+    }
+    const page = pages[pageIndex];
+
+    const base64Data = signaturePngDataUrl.replace(/^data:image\/\w+;base64,/, '');
+    const binaryStr = atob(base64Data);
+    const len = binaryStr.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryStr.charCodeAt(i);
+    }
+
+    const embeddedPng = await pdfDoc.embedPng(bytes);
+    page.drawImage(embeddedPng, {
+      x: options.x,
+      y: options.y,
+      width: options.width,
+      height: options.height,
+    });
+
+    return await pdfDoc.save({ useObjectStreams: true });
+  }
+
+  /**
+   * Adiciona marcações de marca-texto semi-transparentes
+   */
+  static async addHighlights(
+    data: ArrayBuffer,
+    highlights: {
+      pageNumber: number;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      colorHex: string;
+      opacity?: number;
+    }[]
+  ): Promise<Uint8Array> {
+    const pdfDoc = await PDFDocument.load(data, { ignoreEncryption: true });
+    const pages = pdfDoc.getPages();
+
+    for (const hl of highlights) {
+      const pIndex = hl.pageNumber - 1;
+      if (pIndex < 0 || pIndex >= pages.length) continue;
+      const page = pages[pIndex];
+
+      const cleanHex = hl.colorHex.replace('#', '');
+      const r = parseInt(cleanHex.substring(0, 2), 16) / 255;
+      const g = parseInt(cleanHex.substring(2, 4), 16) / 255;
+      const b = parseInt(cleanHex.substring(4, 6), 16) / 255;
+
+      page.drawRectangle({
+        x: hl.x,
+        y: hl.y,
+        width: hl.width,
+        height: hl.height,
+        color: rgb(r, g, b),
+        opacity: hl.opacity !== undefined ? hl.opacity : 0.35,
+      });
+    }
+
+    return await pdfDoc.save({ useObjectStreams: true });
+  }
+
+  /**
    * Utilitário para criar Blob seguro sem erros de tipo
    */
   static createBlob(bytes: Uint8Array, mimeType: string = 'application/pdf'): Blob {

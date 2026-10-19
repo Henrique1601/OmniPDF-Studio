@@ -7,7 +7,9 @@ import {
   RotateCw, 
   Maximize, 
   FolderOpen,
-  Layers
+  Layers,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { PDFFileInfo } from '../types';
 import { PDFService } from '../services/pdfService';
@@ -23,6 +25,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({ file, onOpenFile }) => {
   const [scale, setScale] = useState<number>(1.2);
   const [rotation, setRotation] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [showThumbnails, setShowThumbnails] = useState<boolean>(true);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -184,6 +187,20 @@ export const ReaderView: React.FC<ReaderViewProps> = ({ file, onOpenFile }) => {
           >
             100%
           </button>
+
+          <div className="h-4 w-px bg-slate-800 mx-1" />
+
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            title={isDarkMode ? 'Desativar Modo Noturno' : 'Ativar Modo Noturno'}
+            className={`p-1.5 rounded-lg border transition-all ${
+              isDarkMode
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
+                : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
+            }`}
+          >
+            {isDarkMode ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4" />}
+          </button>
         </div>
       </div>
 
@@ -228,7 +245,14 @@ export const ReaderView: React.FC<ReaderViewProps> = ({ file, onOpenFile }) => {
               </div>
             </div>
           )}
-          <div className="shadow-2xl rounded border border-slate-700/60 bg-white overflow-hidden transition-transform duration-150">
+          <div
+            style={
+              isDarkMode
+                ? { filter: 'invert(0.92) hue-rotate(180deg) brightness(1.05) contrast(0.95)' }
+                : {}
+            }
+            className="shadow-2xl rounded border border-slate-700/60 bg-white overflow-hidden transition-all duration-200"
+          >
             <canvas ref={canvasRef} />
           </div>
         </div>

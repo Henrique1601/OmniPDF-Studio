@@ -1,7 +1,7 @@
 {
-  "name": "hbspdfed",
+  "name": "omnipdf-studio",
   "version": "1.0.0",
-  "description": "HbsPDFed - Leitor e Editor de PDF Completo e Moderno",
+  "description": "OmniPDF Studio - A mais completa suíte de visualização e edição de PDF",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
@@ -34,8 +34,8 @@
     "vite-plugin-electron-renderer": "^0.14.6"
   },
   "build": {
-    "appId": "com.henrique.hbspdfed",
-    "productName": "HbsPDFed",
+    "appId": "com.henrique.omnipdfstudio",
+    "productName": "OmniPDF Studio",
     "directories": {
       "output": "dist-package"
     },
@@ -58,7 +58,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "HbsPDFed"
+      "shortcutName": "OmniPDF Studio"
     }
   }
 }
