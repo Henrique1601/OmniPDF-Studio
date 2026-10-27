@@ -45,9 +45,14 @@ export interface TaskHistoryItem {
   outputSize?: number;
 }
 
+export type AIProviderType = 'gemini' | 'ollama' | 'offline';
+
 export interface AppPreferences {
   theme: 'dark' | 'light' | 'system';
+  aiProvider: AIProviderType;
   geminiApiKey: string;
+  ollamaUrl: string;
+  ollamaModel: string;
   defaultOcrLang: 'por' | 'eng' | 'spa';
   autoCheckUpdates: boolean;
   defaultSaveDirectory?: string;

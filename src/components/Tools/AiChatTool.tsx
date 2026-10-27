@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { PDFFileInfo } from '../../types';
 import { PDFService } from '../../services/pdfService';
-import { GoogleGenAI } from '@google/genai';
+import { AIService } from '../../services/aiService';
 
 interface AiChatToolProps {
   currentFile: PDFFileInfo | null;
@@ -104,30 +104,20 @@ export const AiChatTool: React.FC<AiChatToolProps> = ({
     try {
       let reply = '';
 
-      if (apiKey.trim()) {
-        // Use real Google Gemini API
-        const ai = new GoogleGenAI({ apiKey: apiKey.trim() });
-        const prompt = `Você é o assistente inteligente do OmniPDF Studio. 
-Analise o seguinte documento PDF e responda à pergunta do usuário de forma clara, profissional e objetiva em português do Brasil. Cite páginas quando relevante.
-
-DOCUMENTO:
-${docText.slice(0, 50000)}
-
-PERGUNTA DO USUÁRIO:
-${question}`;
-
-        const res = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt,
-        });
-
-        reply = res.text || 'Não foi possível gerar uma resposta para este documento.';
+      if (AIService.hasConfiguredAI()) {
+        const systemPrompt = `Você é o assistente inteligente do OmniPDF Studio. Analise o documento PDF fornecido e responda à pergunta do usuário de forma clara, profissional e objetiva em português do Brasil. Cite páginas quando relevante.`;
+        const prompt = `DOCUMENTO:\n${docText.slice(0, 45000)}\n\nPERGUNTA DO USUÁRIO:\n${question}`;
+        
+        reply = await AIService.generate(prompt, systemPrompt);
+        if (!reply) {
+          reply = 'Não foi possível obter uma resposta do modelo de IA.';
+        }
       } else {
-        // Local Smart Heuristics Fallback when no API Key is provided
-        await new Promise((r) => setTimeout(r, 900));
+        // Local Smart Heuristics Fallback when no API Key or Local LLM is provided
+        await new Promise((r) => setTimeout(r, 600));
 
         if (question.toLowerCase().includes('resum')) {
-          reply = `📋 **Resumo Geral do Documento (${currentFile?.name}):**\n\n- **Extensão:** ${currentFile?.pageCount || 1} página(s)\n- **Volume de Texto:** ~${docText.split(/\s+/).length} palavras analisadas.\n- **Visão Geral:** O documento trata de termos e condições estruturados em seções formais.\n\n*(Dica: Insira sua chave Gemini API no botão acima para resumos detalhados com inteligência profunda de modelos LLM).*`;
+          reply = `📋 **Resumo Heurístico Local (${currentFile?.name}):**\n\n- **Extensão:** ${currentFile?.pageCount || 1} página(s)\n- **Volume de Texto:** ~${docText.split(/\s+/).length} palavras analisadas.\n- **Visão Geral:** O documento possui seções estruturadas e termos formais identificados.\n\n*(Dica: Configure sua chave Gemini API ou uma LLM local Ollama nas Configurações para obter resumos profundos de modelos LLM).*`;
         } else if (question.toLowerCase().includes('valor') || question.toLowerCase().includes('preço')) {
           const moneyRegex = /(?:R\$\s?|\$)\s?\d+(?:[.,]\d{2,3})*(?:[.,]\d{2})?/gi;
           const matches = docText.match(moneyRegex) || [];
@@ -137,7 +127,7 @@ ${question}`;
               : 'Nenhum valor monetário explícito (R$ ou $) foi detectado nas páginas.'
           }`;
         } else {
-          reply = `🔍 **Análise Local:** Localizei trechos relevantes no texto do documento. Para uma resposta analítica completa e geração de texto avançada com raciocínio contextual, clique no ícone de chave 🔑 no topo e insira uma chave gratuita da Google Gemini API!`;
+          reply = `🔍 **Análise Local Heurística:** Identifiquei ocorrências dos termos pesquisados no documento. Para raciocínio avançado, interpretação de contexto e síntese completa, configure uma Chave Gemini API ou conecte o Ollama local nas Preferências do app!`;
         }
       }
 

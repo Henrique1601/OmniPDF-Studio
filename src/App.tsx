@@ -30,6 +30,7 @@ import { HomeView } from './components/Views/HomeView';
 import { RecentsView } from './components/Views/RecentsView';
 import { TaskHistoryView } from './components/Views/TaskHistoryView';
 import { PreferencesView } from './components/Views/PreferencesView';
+import { UpdateModal } from './components/Common/UpdateModal';
 
 import { ToolType, AppNavMode, PDFFileInfo, TaskHistoryItem } from './types';
 import { PDFService } from './services/pdfService';
@@ -41,6 +42,8 @@ export const App: React.FC = () => {
   const [currentFile, setCurrentFile] = useState<PDFFileInfo | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [hasUpdateAvailable, setHasUpdateAvailable] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<{ version?: string; releaseDate?: string; releaseNotes?: string } | null>(null);
   const [recentFiles, setRecentFiles] = useState<PDFFileInfo[]>([]);
   const [taskHistory, setTaskHistory] = useState<TaskHistoryItem[]>(() => {
     try {
@@ -89,7 +92,13 @@ export const App: React.FC = () => {
       const unsubscribe = window.electronAPI.onUpdaterStatus((data) => {
         if (data.status === 'available') {
           setHasUpdateAvailable(true);
-          showToast(`Nova atualização v${data.version} encontrada!`, 'success');
+          setUpdateInfo({
+            version: data.version,
+            releaseDate: data.releaseDate,
+            releaseNotes: data.releaseNotes,
+          });
+          setIsUpdateModalOpen(true);
+          showToast(`Nova versão v${data.version} encontrada no GitHub!`, 'success');
         }
       });
       return () => unsubscribe();
@@ -239,10 +248,7 @@ export const App: React.FC = () => {
           onCloseFile={() => setCurrentFile(null)}
           activeToolName={currentTool ? toolLabels[currentTool] : 'Hub'}
           hasUpdateAvailable={hasUpdateAvailable}
-          onOpenPreferences={() => {
-            setCurrentTool(null);
-            setCurrentNav('preferences');
-          }}
+          onOpenPreferences={() => setIsUpdateModalOpen(true)}
         />
 
         {/* Viewport: Either Active Tool or Hub Nav View */}
@@ -467,7 +473,13 @@ export const App: React.FC = () => {
           )}
 
           {!currentTool && currentNav === 'tools' && (
-            <ToolsCatalogView onSelectTool={handleSelectTool} />
+            <ToolsCatalogView
+              onSelectTool={handleSelectTool}
+              onOpenPreferences={() => {
+                setCurrentTool(null);
+                setCurrentNav('preferences');
+              }}
+            />
           )}
 
           {!currentTool && currentNav === 'recents' && (
@@ -495,6 +507,13 @@ export const App: React.FC = () => {
           {!currentTool && currentNav === 'preferences' && (
             <PreferencesView onShowMessage={showToast} />
           )}
+
+          {/* In-App Auto-Update Modal */}
+          <UpdateModal
+            isOpen={isUpdateModalOpen}
+            onClose={() => setIsUpdateModalOpen(false)}
+            updateData={updateInfo}
+          />
 
           {/* Toast Notification */}
           {toast && (

@@ -1,0 +1,33 @@
+{
+  "name": "@omnipdf/mcp-server",
+  "version": "1.0.0",
+  "description": "Servidor MCP oficial do OmniPDF Studio para IA (Claude, Gemini, Antigravity) manipular e editar PDFs",
+  "main": "dist/index.js",
+  "bin": {
+    "omnipdf-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "omnipdf",
+    "pdf",
+    "pdf-lib",
+    "ai"
+  ],
+  "author": "Henrique Bezerra Dos Santos",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.0",
+    "pdf-lib": "^1.17.1",
+    "tesseract.js": "^5.1.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "typescript": "^5.6.3"
+  }
+}

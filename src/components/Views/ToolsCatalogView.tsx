@@ -24,12 +24,15 @@ import {
   Unlock,
   ChevronDown,
   ChevronRight,
-  Filter
+  Filter,
+  Bot,
+  Key
 } from 'lucide-react';
 import { ToolType } from '../../types';
 
 interface ToolsCatalogViewProps {
   onSelectTool: (tool: ToolType) => void;
+  onOpenPreferences?: () => void;
 }
 
 interface ToolCardItem {
@@ -48,7 +51,7 @@ interface ToolCategory {
   tools: ToolCardItem[];
 }
 
-export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = ({ onSelectTool }) => {
+export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = ({ onSelectTool, onOpenPreferences }) => {
   const [search, setSearch] = useState('');
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
 
@@ -332,7 +335,38 @@ export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = ({ onSelectTool
               </div>
 
               {!isCollapsed && (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <>
+                  {cat.name.includes('Inteligência Artificial') && (
+                    <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-slate-900 border border-purple-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg shadow-purple-950/20">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center shrink-0 mt-0.5">
+                          <Bot className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-purple-200 flex items-center gap-1.5">
+                            <span>Requisito das Ferramentas de IA & Smart Tools</span>
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-300 border border-purple-500/40">
+                              Aviso Importante
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                            Para utilizar estas funcionalidades com análise profunda, é necessário configurar uma <strong>Chave de API (Google Gemini)</strong> ou ter uma <strong>LLM local instalada no seu computador (Ollama / LM Studio)</strong>. Sem uma delas, as ferramentas operam via motor heurístico semântico offline embutido.
+                          </p>
+                        </div>
+                      </div>
+                      {onOpenPreferences && (
+                        <button
+                          onClick={onOpenPreferences}
+                          className="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-95"
+                        >
+                          <Key className="w-3.5 h-3.5" />
+                          Configurar API / LLM Local
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {filteredTools.map((tool) => {
                     const Icon = tool.icon;
                     return (
@@ -367,6 +401,7 @@ export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = ({ onSelectTool
                     );
                   })}
                 </div>
+              </>
               )}
             </div>
           );

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { ShieldAlert, FileText, AlertTriangle, CheckCircle2, Loader2, Sparkles, Download, Copy, BookmarkCheck, Scale } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
 import { PDFFileInfo } from '../../types';
 import { PDFService } from '../../services/pdfService';
+import { AIService } from '../../services/aiService';
 
 interface ContractAuditToolProps {
   currentFile: PDFFileInfo | null;
@@ -40,9 +40,8 @@ export const ContractAuditTool: React.FC<ContractAuditToolProps> = ({
 
       let generatedReport: AuditReport;
 
-      if (apiKey.trim()) {
+      if (AIService.hasConfiguredAI()) {
         try {
-          const ai = new GoogleGenAI({ apiKey: apiKey.trim() });
           const prompt = `Você é um auditor jurídico sênior especializado em contratos. Analise o seguinte contrato extraído de um PDF e retorne uma auditoria estrita em formato JSON com o seguinte schema:
 {
   "title": "Tipo do Contrato ou Título",
@@ -59,12 +58,7 @@ export const ContractAuditTool: React.FC<ContractAuditToolProps> = ({
 
 Contrato:\n${fullText.slice(0, 35000)}`;
 
-          const res = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-          });
-
-          const jsonText = res.text || '';
+          const jsonText = await AIService.generate(prompt);
           const match = jsonText.match(/\{[\s\S]*\}/);
           if (match) {
             generatedReport = JSON.parse(match[0]);

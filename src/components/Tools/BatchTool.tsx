@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Layers, FileText, Trash2, CheckCircle, AlertCircle, Loader2, ArrowRight, Shield, Type, Minimize2, Bookmark } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
 import { PDFService } from '../../services/pdfService';
+import { LiveMonitorModal, LiveLogEvent } from '../Common/LiveMonitorModal';
 
 interface BatchFileItem {
   id: string;
@@ -21,6 +22,9 @@ export const BatchTool: React.FC = () => {
   const [action, setAction] = useState<BatchAction>('compress');
   const [isProcessing, setIsProcessing] = useState(false);
   const [overallProgress, setOverallProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState('');
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [liveLogs, setLiveLogs] = useState<LiveLogEvent[]>([]);
 
   // Action settings
   const [watermarkText, setWatermarkText] = useState('CONFIDENCIAL');
@@ -83,6 +87,16 @@ export const BatchTool: React.FC = () => {
     setOverallProgress(0);
   };
 
+  const addLiveLog = (message: string, type: 'info' | 'success' | 'warn' | 'active' = 'info') => {
+    const time = new Date().toLocaleTimeString();
+    setLiveLogs(prev => [...prev.slice(-30), {
+      id: Math.random().toString(),
+      timestamp: time,
+      message,
+      type
+    }]);
+  };
+
   const processBatch = async () => {
     if (files.length === 0 || isProcessing) return;
 
@@ -93,9 +107,20 @@ export const BatchTool: React.FC = () => {
 
     setIsProcessing(true);
     setOverallProgress(0);
+    setElapsedSeconds(0);
+    setLiveLogs([]);
+
+    const timer = setInterval(() => {
+      setElapsedSeconds(s => Number((s + 0.1).toFixed(1)));
+    }, 100);
+
+    addLiveLog(`Iniciando lote: ${files.length} arquivo(s) selecionado(s) para [${action.toUpperCase()}]`, 'active');
 
     for (let i = 0; i < files.length; i++) {
       const current = files[i];
+      setCurrentStep(`Processando ${current.name} (${i + 1}/${files.length})...`);
+      addLiveLog(`[${i + 1}/${files.length}] Lendo bytes de "${current.name}"...`, 'active');
+
       setFiles(prev => prev.map((item, idx) => idx === i ? { ...item, status: 'processing' } : item));
 
       try {
@@ -103,9 +128,11 @@ export const BatchTool: React.FC = () => {
 
         switch (action) {
           case 'compress':
+            addLiveLog(`Comprimindo streams e limpando objetos de "${current.name}"...`);
             result = await PDFService.compressPdf(current.data.buffer as ArrayBuffer);
             break;
           case 'watermark':
+            addLiveLog(`Aplicando marca d'água "${watermarkText}" em "${current.name}"...`);
             result = await PDFService.addWatermark(current.data.buffer as ArrayBuffer, watermarkText, {
               opacity: watermarkOpacity,
               fontSize: 48,
@@ -113,6 +140,7 @@ export const BatchTool: React.FC = () => {
             });
             break;
           case 'protect': {
+            addLiveLog(`Gravando credenciais de segurança em "${current.name}"...`);
             const doc = await PDFDocument.load(current.data.buffer as ArrayBuffer, { ignoreEncryption: true });
             doc.setTitle(`[Protegido] ${current.name}`);
             doc.setSubject(`Senha configurada: ${protectPassword}`);
@@ -120,6 +148,7 @@ export const BatchTool: React.FC = () => {
             break;
           }
           case 'numbers':
+            addLiveLog(`Gerando numeração nas páginas de "${current.name}"...`);
             result = await PDFService.addPageNumbers(current.data.buffer as ArrayBuffer, {
               format: 'page-of-total',
               position: 'bottom-right',
@@ -129,6 +158,8 @@ export const BatchTool: React.FC = () => {
             break;
         }
 
+        addLiveLog(`Arquivo "${current.name}" concluído com sucesso (${result.byteLength} bytes).`, 'success');
+
         setFiles(prev => prev.map((item, idx) => idx === i ? {
           ...item,
           status: 'done',
@@ -136,6 +167,7 @@ export const BatchTool: React.FC = () => {
           resultSize: result.byteLength
         } : item));
       } catch (err: any) {
+        addLiveLog(`Erro ao processar "${current.name}": ${err.message}`, 'warn');
         setFiles(prev => prev.map((item, idx) => idx === i ? {
           ...item,
           status: 'error',
@@ -146,7 +178,11 @@ export const BatchTool: React.FC = () => {
       setOverallProgress(Math.round(((i + 1) / files.length) * 100));
     }
 
-    setIsProcessing(false);
+    clearInterval(timer);
+    addLiveLog(`Processamento em lote finalizado com sucesso!`, 'success');
+    setTimeout(() => {
+      setIsProcessing(false);
+    }, 800);
   };
 
   const downloadItem = async (item: BatchFileItem) => {
@@ -534,6 +570,16 @@ export const BatchTool: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Live Execution Monitor HUD */}
+      <LiveMonitorModal
+        isOpen={isProcessing}
+        title={`Processamento em Lote: ${action.toUpperCase()}`}
+        currentStep={currentStep}
+        progress={overallProgress}
+        elapsedSeconds={elapsedSeconds}
+        logs={liveLogs}
+      />
     </div>
   );
 };

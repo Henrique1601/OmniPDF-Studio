@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Languages, Loader2, Download, ArrowRight, Sparkles, CheckCircle2, Globe, FileText, RefreshCw } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
 import { PDFFileInfo, DetectedTextItem, TextEditItem } from '../../types';
 import { PDFService } from '../../services/pdfService';
+import { AIService } from '../../services/aiService';
+import { LiveMonitorModal, LiveLogEvent } from '../Common/LiveMonitorModal';
 
 interface TranslatorToolProps {
   currentFile: PDFFileInfo | null;
@@ -25,6 +26,9 @@ export const TranslatorTool: React.FC<TranslatorToolProps> = ({
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('omnipdf_gemini_api_key') || '');
   const [translatedPdfBytes, setTranslatedPdfBytes] = useState<Uint8Array | null>(null);
   const [translatedSummary, setTranslatedSummary] = useState<string>('');
+  const [currentStep, setCurrentStep] = useState<string>('');
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
+  const [liveLogs, setLiveLogs] = useState<LiveLogEvent[]>([]);
 
   useEffect(() => {
     if (currentFile) {
@@ -99,41 +103,54 @@ export const TranslatorTool: React.FC<TranslatorToolProps> = ({
     return result;
   };
 
+  const addLiveLog = (message: string, type: 'info' | 'success' | 'warn' | 'active' = 'info') => {
+    const time = new Date().toLocaleTimeString();
+    setLiveLogs(prev => [...prev.slice(-30), {
+      id: Math.random().toString(),
+      timestamp: time,
+      message,
+      type
+    }]);
+  };
+
   const handleTranslateAll = async () => {
     if (!currentFile) return;
     setIsTranslating(true);
     setProgress(0);
+    setElapsedSeconds(0);
+    setLiveLogs([]);
+
+    const timer = setInterval(() => {
+      setElapsedSeconds(s => Number((s + 0.1).toFixed(1)));
+    }, 100);
+
+    addLiveLog(`Iniciando tradução para [${targetLangNames[targetLang]}]`, 'active');
 
     try {
       const allEdits: TextEditItem[] = [];
-      let geminiClient: GoogleGenAI | null = null;
-      if (apiKey.trim()) {
-        geminiClient = new GoogleGenAI({ apiKey: apiKey.trim() });
-      }
 
       for (let p = 1; p <= totalPages; p++) {
+        setCurrentStep(`Traduzindo página ${p} de ${totalPages}...`);
+        addLiveLog(`Página ${p}/${totalPages}: Extraindo posições de texto...`, 'active');
         const textItems = await PDFService.extractPageTextItems(currentFile.data, p, 1.0);
         if (textItems.length === 0) continue;
 
         // Group text by chunks to translate with AI or offline
         const textsToTranslate = textItems.map(item => item.str);
-
         let translatedTexts: string[] = [];
 
-        if (geminiClient) {
+        if (AIService.hasConfiguredAI()) {
           try {
+            addLiveLog(`Página ${p}: Consultando modelo de IA...`);
             const prompt = `Translate the following array of strings into ${targetLangNames[targetLang]}. Keep formatting, numbers, and layout codes identical. Output ONLY a valid JSON array of strings in the exact same index order:\n${JSON.stringify(textsToTranslate)}`;
-            const response = await geminiClient.models.generateContent({
-              model: 'gemini-2.5-flash',
-              contents: prompt,
-            });
-            const textResponse = response.text || '[]';
+            const textResponse = await AIService.generate(prompt);
             const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
             if (jsonMatch) {
               translatedTexts = JSON.parse(jsonMatch[0]);
+              addLiveLog(`Página ${p}: ${translatedTexts.length} bloco(s) traduzidos via IA.`, 'success');
             }
           } catch (apiErr) {
-            console.warn('Gemini translation error, falling back to local translation', apiErr);
+            addLiveLog(`Falha no modelo de IA, usando glossário local: ${apiErr}`, 'warn');
           }
         }
 
@@ -165,9 +182,11 @@ export const TranslatorTool: React.FC<TranslatorToolProps> = ({
         setProgress(Math.round((p / totalPages) * 100));
       }
 
+      addLiveLog(`Gravando ${allEdits.length} substituições no PDF final...`, 'active');
       const result = await PDFService.applyTextEdits(currentFile.data, allEdits);
       setTranslatedPdfBytes(result);
       setTranslatedSummary(`Tradução concluída! ${allEdits.length} blocos de texto foram substituídos nas posições nativas.`);
+      addLiveLog(`Tradução completa com sucesso!`, 'success');
       onShowMessage('Documento traduzido com sucesso preservando o layout!', 'success');
 
       if (onFileUpdated) {
@@ -179,9 +198,13 @@ export const TranslatorTool: React.FC<TranslatorToolProps> = ({
       }
     } catch (err: any) {
       console.error(err);
+      addLiveLog(`Erro: ${err.message}`, 'warn');
       onShowMessage(`Erro na tradução: ${err.message}`, 'error');
     } finally {
-      setIsTranslating(false);
+      clearInterval(timer);
+      setTimeout(() => {
+        setIsTranslating(false);
+      }, 700);
     }
   };
 
@@ -360,6 +383,16 @@ export const TranslatorTool: React.FC<TranslatorToolProps> = ({
           </div>
         </div>
       </div>
+
+      <LiveMonitorModal
+        isOpen={isTranslating}
+        title="Tradutor Integral de PDF"
+        currentStep={currentStep}
+        progress={progress}
+        elapsedSeconds={elapsedSeconds}
+        logs={liveLogs}
+        totalPages={totalPages}
+      />
     </div>
   );
 };
