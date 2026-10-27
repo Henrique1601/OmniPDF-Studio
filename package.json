@@ -1,7 +1,27 @@
 {
   "name": "omnipdf-studio",
   "version": "1.0.0",
-  "description": "OmniPDF Studio - A mais completa suíte de visualização e edição de PDF",
+  "description": "OmniPDF Studio - A mais completa suíte de visualização e edição de PDF com TrueEdit, IA e ferramentas 100% offline",
+  "author": "Henrique Bezerra Dos Santos",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Henrique1601/OmniPDF-Studio.git"
+  },
+  "keywords": [
+    "pdf",
+    "pdf-editor",
+    "trueedit",
+    "electron",
+    "react",
+    "typescript",
+    "tesseract",
+    "ocr",
+    "gemini-api",
+    "offline-first",
+    "desktop-app",
+    "windows"
+  ],
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",

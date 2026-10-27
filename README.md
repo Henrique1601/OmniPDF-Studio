@@ -1,56 +1,157 @@
-# OmniPDF Studio - Suíte Completa e Inteligente de PDF (100% Offline)
+# <p align="center">📄 OmniPDF Studio</p>
 
-**OmniPDF Studio** é uma suíte desktop profissional para leitura, edição direta, anotações, assinaturas manuscritas e manipulação de arquivos PDF. Construído com arquitetura moderna, privada e **100% offline**, garantindo que seus documentos nunca saiam da sua máquina.
+<p align="center">
+  <strong>A mais completa suíte de PDF para Windows com TrueEdit, Inteligência Artificial, OCR e Ferramentas 100% Offline.</strong>
+</p>
 
----
+<p align="center">
+  <a href="https://github.com/Henrique1601/OmniPDF-Studio/releases/latest"><img src="https://img.shields.io/github/v/release/Henrique1601/OmniPDF-Studio?style=for-the-badge&color=e11d48&label=Release" alt="Latest Release" /></a>
+  <a href="https://landing-topaz-ten-44.vercel.app"><img src="https://img.shields.io/badge/Vercel-Landing%20Page-black?style=for-the-badge&logo=vercel" alt="Vercel Website" /></a>
+  <a href="https://github.com/Henrique1601/OmniPDF-Studio/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="MIT License" /></a>
+  <a href="https://www.electronjs.org/"><img src="https://img.shields.io/badge/Electron-33.x-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron" /></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
+</p>
 
-## 📦 Instalador Oficial para Windows
-
-O novo instalador oficial com a marca **OmniPDF Studio** está pronto para uso:
-
-- 🚀 **Instalador Oficial:** [`dist-package/OmniPDF Studio Setup 1.0.0.exe`](dist-package/OmniPDF%20Studio%20Setup%201.0.0.exe) (~99.1 MB)
-- 📁 **Executável Portátil (Direto):** [`dist-package/win-unpacked/OmniPDF Studio.exe`](dist-package/win-unpacked/OmniPDF%20Studio.exe)
-
-Ao executar o instalador `OmniPDF Studio Setup 1.0.0.exe`:
-1. Permite escolher o diretório de instalação.
-2. Cria automaticamente os atalhos com a marca **OmniPDF Studio** na **Área de Trabalho** e no **Menu Iniciar**.
-3. Registra o desinstalador oficial no Windows.
-
----
-
-## 🛠️ Suíte Completa de Ferramentas
-
-| Ferramenta | Descrição |
-| :--- | :--- |
-| ✍️ **Assinar PDF (Manuscrito)** | **FASE 1:** Painel de desenho com física suave para criar e carimbar sua assinatura em qualquer página com ajuste visual de escala e posição. |
-| 🔢 **Numerar Páginas** | **FASE 1:** Numeração sequencial automática ("Página X de Y" ou simples) em rodapés e cabeçalhos, com controle de margem e opção de pular capa. |
-| 🖍️ **Marca-Texto Inteligente** | **FASE 1:** Destaque trechos importantes com marca-texto fluorescente (amarelo, verde, azul, rosa) diretamente sobre o texto. |
-| 🌙 **Modo Noturno (Dark Reader)** | **FASE 1:** Inversão suave e inteligente de contraste no leitor para leitura agradável e sem fadiga visual à noite. |
-| ✨ **Editar Texto do PDF (TrueEdit)** | Clique diretamente sobre qualquer texto existente no PDF para alterar em tempo real ou use Localizar e Substituir em lote! |
-| 📖 **Visualizador PDF** | Leitor interativo com painel de miniaturas laterais, zoom contínuo, rotação 90° e navegação ágil. |
-| 📑 **Juntar PDFs (Merge)** | Unifique 2 ou mais arquivos PDF em qualquer ordem desejada. |
-| ✂️ **Dividir PDF (Split)** | Extraia intervalos de páginas (ex: `1-3, 5, 8-10`) em novos documentos. |
-| 🗂️ **Organizar Páginas** | Grade visual para girar 90°, reordenar ou excluir páginas individuais. |
-| 🗜️ **Compactar PDF** | Otimização estrutural com Object Streams e descarte de dados redundantes. |
-| 💧 **Marca d'Água** | Carimbos textuais com controle de tamanho, opacidade e ângulo. |
-| 🔒 **Proteger com Senha** | Camada de segurança e integridade com proteção por senha. |
-| 🖼️ **PDF para Imagem** | Renderização em alta definição para arquivos PNG ou JPEG. |
-| 📸 **Imagens para PDF** | Conversão de fotos, recibos ou capturas de tela (PNG/JPG) em um PDF único. |
-| 📝 **Anotar & Notas** | Inserção de anotações permanentes gravadas no PDF. |
+<p align="center">
+  <a href="https://github.com/Henrique1601/OmniPDF-Studio/releases/latest/download/OmniPDF.Studio.Setup.1.0.0.exe"><strong>🚀 Download do Instalador (.EXE)</strong></a> •
+  <a href="https://landing-topaz-ten-44.vercel.app"><strong>🌐 Landing Page Oficial</strong></a> •
+  <a href="https://github.com/Henrique1601/OmniPDF-Studio/releases"><strong>📦 Todas as Releases</strong></a> •
+  <a href="#-principais-recursos"><strong>✨ Recursos</strong></a> •
+  <a href="#-arquitetura-do-sistema"><strong>🏗️ Arquitetura</strong></a>
+</p>
 
 ---
 
-## 🗺️ Roadmap de Próximas Fases
+## 💡 O Que É o OmniPDF Studio?
 
-- **Fase 2:** OCR Offline com Tesseract.js (reconhecimento de texto em scans), Redação e Censura Permanente de dados sensíveis e Comparador Visual de Versões (Side-by-Side Diff).
-- **Fase 3:** IA Assistente com o Documento ("Converse com seu PDF" via Google Gemini API e fallback local) e Processamento em Lote de pastas inteiras.
+O **OmniPDF Studio** é uma aplicação desktop nativa desenvolvida para substituir ferramentas web fragmentadas, lentas ou pagas (*Adobe Acrobat Pro, iLovePDF, Smallpdf*). Ele combina manipulação de PDF de alta fidelidade, **edição direta no documento (TrueEdit)**, reconhecimento óptico de caracteres (**OCR offline**), **inteligência artificial local e Gemini 2.5 Flash**, e privacidade absoluta: **seus arquivos nunca saem da sua máquina**.
+
+Sua interface foi construída seguindo o modelo **Hub de Produtividade** (inspirado no iLovePDF Desktop): sidebar recolhível, navegação por abas estilo navegador, catálogo visual de ferramentas agrupadas por categorias e histórico local de tarefas.
 
 ---
 
-## 💻 Arquitetura Técnica
+## 📦 Download & Instalação para Windows
 
-- **Shell Desktop:** Electron 33 (com suporte a IPC seguro, diálogos nativos do Windows e isolamento de contexto)
-- **Interface Gráfica:** React 18, TypeScript, Tailwind CSS, Lucide Icons
-- **Visualizador:** PDF.js (Mozilla) com renderização Canvas de alta fidelidade
-- **Motor de Manipulação:** `pdf-lib` (processamento binário local sem servidores terceiros)
-- **Empacotador:** `electron-builder` com instalador NSIS
+| Versão | Tipo | Link Direto | Tamanho |
+| :--- | :--- | :--- | :--- |
+| **v1.0.0 Oficial** | Instalador Windows (NSIS com atalhos) | [**Baixar `OmniPDF Studio Setup 1.0.0.exe`**](https://github.com/Henrique1601/OmniPDF-Studio/releases/latest/download/OmniPDF.Studio.Setup.1.0.0.exe) | ~119 MB |
+| **v1.0.0 Portátil** | Executável sem necessidade de instalação | Disponível em `dist-package/win-unpacked/` | ~250 MB |
+
+> **Nota de Instalação:** O instalador registra atalhos na Área de Trabalho e no Menu Iniciar, além de configurar suporte a atualizações automáticas via `electron-updater`.
+
+---
+
+## ✨ Catálogo de Ferramentas (Mais de 20 Ferramentas)
+
+### 🤖 1. Inteligência Artificial & Smart Tools
+- **Chat com PDF (IA):** Análise contextual profunda, resumos e perguntas com suporte a **Google Gemini 2.5 Flash** e **motor heurístico semântico 100% offline**.
+- **Tradutor Integral de PDF:** Tradução completa para Português, Inglês, Espanhol, Francês ou Alemão, **preservando as coordenadas e o layout visual nativo**.
+- **Auditor de Contratos & Riscos Jurídicos:** Extração automática de partes, vigência, valores, cláusulas penais e cálculo de score de risco jurídico (*Baixo / Médio / Alto*) com exportação em Markdown.
+- **Busca Semântica em Pastas (RAG Local):** Indexação em memória de centenas de PDFs de uma pasta local para busca instantânea de termos, valores monetários ou cláusulas.
+
+### ✍️ 2. Edição Direta & Anotações
+- **TrueEdit (Inédito):** Edição e substituição in-place de blocos de texto no PDF preservando a tipografia e aplicando máscaras sólidas automáticas.
+- **Assinatura Manuscrita:** Painel de desenho com física de traço suave ou carimbo digital posicionável com ajuste visual de escala e rotação.
+- **Marca-Texto Inteligente:** Destaques semi-transparentes coloridos (amarelo, verde, azul, rosa) aplicados sobre os textos selecionados.
+- **Numeração de Páginas:** Cabeçalho e rodapé automáticos (*"Página X de Y"*, simples ou prefixado) com controle de margens e opção de pular capa.
+- **Marca d'Água:** Carimbos textuais com personalização de tamanho, ângulo, rotação e opacidade.
+- **Anotações & Notas:** Inserção livre de notas e caixas de anotação no PDF.
+
+### ⚡ 3. Otimização, Segurança & Privacidade
+- **Desbloquear PDF (Unlock):** Reconstrução de árvore de objetos para **eliminar restrições de impressão, cópia de texto e senhas de permissão**.
+- **Censurar & Redigir (LGPD):** Remoção permanente de CPF, e-mails, telefones e dados sensíveis via tarjas pretas sobrepostas nos bytes binários.
+- **OCR Offline:** Reconhecimento óptico de caracteres em PDFs digitalizados via Tesseract.js (Português, Inglês, Espanhol) sem internet.
+- **Compactar PDF:** Otimização estrutural com ativação de Object Streams e limpeza de objetos órfãos.
+- **Proteger com Senha:** Criptografia e trava de abertura por senha corporativa.
+- **Comparar PDFs:** Comparador visual e textual lado a lado para controle de versões e auditoria de alterações.
+
+### 📁 4. Organização & Conversão
+- **Juntar PDFs (Merge):** Unificação de múltiplos arquivos em qualquer sequência.
+- **Dividir PDF (Split):** Extração de intervalos específicos de páginas.
+- **Organizar Páginas:** Grade interativa para girar 90°, reordenar ou excluir páginas individuais.
+- **Processamento em Lote (Batch):** Aplicação de compressão, proteção, marcas d'água ou numeração em dezenas de documentos simultaneamente.
+- **PDF para Imagem:** Exportação de páginas em PNG ou JPEG de alta definição.
+- **Imagens para PDF:** Conversão de lotes de fotos, digitalizações e prints em um único documento PDF.
+
+---
+
+## 🎨 Interface & Navegação (Modelo Hub iLovePDF)
+
+- **Sidebar Recolhível:** Alternância com 1 clique entre modo expandido e coluna de ícones compactos.
+- **Seções Dedicadas:**
+  - `Home`: Dashboard de boas-vindas com atalhos rápidos e abertura de arquivos.
+  - `Recents`: Histórico de documentos abertos recentemente com acesso imediato.
+  - `Tools`: Catálogo visual completo com busca rápida e categorias expansíveis.
+  - `Tasks History`: Registro das tarefas e conversões concluídas com sucesso.
+  - `Preferences`: Gerenciador de Chave Gemini API, idioma do OCR, nível de compressão e verificador de updates.
+- **Abas Superiores (Top Tabs):** Navegação ágil entre a Home, as ferramentas em execução e os documentos carregados.
+
+---
+
+## 🏗️ Arquitetura do Sistema
+
+```mermaid
+flowchart TD
+    subgraph UI["Camada de Interface (React 18 + Tailwind)"]
+        Sidebar["Sidebar Recolhível (Hub)"]
+        TopNav["Barra de Abas Superior"]
+        Catalog["Catálogo de Ferramentas"]
+        Views["Vistas Especializadas (TrueEdit, IA, OCR, Unlock, etc.)"]
+    end
+
+    subgraph IPC["Electron IPC Bridge (Preload Seguro)"]
+        API["window.electronAPI"]
+    end
+
+    subgraph Backend["Electron Main & Motores Locais"]
+        Main["Main Process (Node.js)"]
+        PDFLib["pdf-lib (Manipulação Binária)"]
+        PDFJS["pdfjs-dist (Renderização Canvas)"]
+        Tesseract["tesseract.js (OCR Offline)"]
+        Gemini["@google/genai (Gemini 2.5 Flash)"]
+        Updater["electron-updater (GitHub Releases)"]
+    end
+
+    UI --> API
+    API --> Main
+    Main --> PDFLib
+    Main --> PDFJS
+    Main --> Tesseract
+    Main --> Gemini
+    Main --> Updater
+```
+
+---
+
+## 🛡️ Privacidade & Segurança (100% Offline First)
+
+1. **Zero Telemetria Externa:** O processamento de divisão, união, compressão, TrueEdit e OCR ocorre estritamente na memória RAM da sua máquina.
+2. **Segurança de Chaves de API:** Sua chave do Google Gemini permanece gravada exclusivamente no armazenamento local criptografado do seu dispositivo.
+3. **Censura LGPD Real:** A ferramenta de censura não apenas pinta de preto visualmente, mas reconstrói a árvore de texto para impedir que os dados confidenciais sejam selecionados ou recuperados via clipboard.
+
+---
+
+## 💻 Como Executar em Modo de Desenvolvimento
+
+```bash
+# 1. Clone o repositório
+git clone https://github.com/Henrique1601/OmniPDF-Studio.git
+cd OmniPDF-Studio
+
+# 2. Instale as dependências
+npm install
+
+# 3. Inicie o servidor de desenvolvimento Vite + Electron
+npm run dev
+
+# 4. Compile e empacote o instalador para Windows
+npm run dist
+```
+
+---
+
+## 📄 Licença & Autor
+
+- **Autor:** [Henrique Bezerra Dos Santos](https://github.com/Henrique1601)
+- **Licença:** Este projeto está sob a [Licença MIT](LICENSE). Sinta-se livre para usar, estudar e contribuir.
