@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Key, Globe, Download, RefreshCw, CheckCircle2, Shield, Folder, HardDrive, Cpu, AlertCircle, Bot, Server, Loader2, Sparkles } from 'lucide-react';
-import { AppPreferences, AIProviderType } from '../../types';
+import { Settings, Key, Globe, Download, RefreshCw, CheckCircle2, Shield, Folder, HardDrive, Cpu, AlertCircle, Bot, Server, Loader2, Sparkles, Palette, Sun, Moon, Clock, Monitor, Check } from 'lucide-react';
+import { AppPreferences, AIProviderType, ThemeId } from '../../types';
 import { AIService } from '../../services/aiService';
+import { ThemeService, AVAILABLE_THEMES } from '../../services/themeService';
 
 interface PreferencesViewProps {
   onShowMessage: (msg: string, type?: 'success' | 'error') => void;
@@ -22,13 +23,32 @@ export const PreferencesView: React.FC<PreferencesViewProps> = ({ onShowMessage 
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<string | null>(null);
 
+  const [selectedTheme, setSelectedTheme] = useState<ThemeId>(() => ThemeService.getSelectedTheme());
+  const [effectiveTheme, setEffectiveTheme] = useState<ThemeId>(() => ThemeService.getEffectiveTheme());
+  const [scheduleDayStart, setScheduleDayStart] = useState(() => ThemeService.getScheduleSettings().dayStart);
+  const [scheduleNightStart, setScheduleNightStart] = useState(() => ThemeService.getScheduleSettings().nightStart);
+
   useEffect(() => {
     if (window.electronAPI?.getAppVersion) {
       window.electronAPI.getAppVersion().then(setAppVersion);
     }
+    const unsubscribe = ThemeService.subscribe((eff, sel) => {
+      setEffectiveTheme(eff);
+      setSelectedTheme(sel);
+    });
+    return () => unsubscribe();
   }, []);
 
+  const handleThemeChange = (themeId: ThemeId) => {
+    setSelectedTheme(themeId);
+    ThemeService.setSelectedTheme(themeId);
+    setEffectiveTheme(ThemeService.getEffectiveTheme(themeId));
+    onShowMessage(`Tema alterado para: ${AVAILABLE_THEMES.find(t => t.id === themeId)?.name}`, 'success');
+  };
+
   const handleSavePreferences = () => {
+    ThemeService.setSelectedTheme(selectedTheme);
+    ThemeService.setScheduleSettings(scheduleDayStart, scheduleNightStart);
     localStorage.setItem('omnipdf_ai_provider', aiProvider);
     localStorage.setItem('omnipdf_gemini_api_key', apiKey.trim());
     localStorage.setItem('omnipdf_ollama_url', ollamaUrl.trim());
@@ -91,6 +111,10 @@ export const PreferencesView: React.FC<PreferencesViewProps> = ({ onShowMessage 
     }
   };
 
+  const darkThemes = AVAILABLE_THEMES.filter(t => t.category === 'dark');
+  const lightThemes = AVAILABLE_THEMES.filter(t => t.category === 'light');
+  const autoThemes = AVAILABLE_THEMES.filter(t => t.category === 'auto');
+
   return (
     <div className="flex-1 flex flex-col h-full bg-[#12141a] overflow-y-auto text-slate-100 p-8 select-none">
       <div className="max-w-3xl mx-auto w-full space-y-8">
@@ -101,11 +125,192 @@ export const PreferencesView: React.FC<PreferencesViewProps> = ({ onShowMessage 
             Configurações do OmniPDF Studio
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Personalize provedores de inteligência artificial, LLMs locais, OCR e atualizações automáticas
+            Personalize temas visuais (pretos, brancos e programado), inteligência artificial, OCR e atualizações
           </p>
         </div>
 
-        {/* Section 1: AI Engine & Local LLMs */}
+        {/* Section 1: Temas & Aparência Visual */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center">
+                <Palette className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-200">Temas & Aparência Visual</h2>
+                <p className="text-xs text-slate-400">
+                  Escolha entre temas escuros profundos (incluindo OLED preto puro), temas brancos límpidos e modo programado
+                </p>
+              </div>
+            </div>
+
+            <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
+              Tema ativo: <strong className="text-rose-400 font-semibold">{AVAILABLE_THEMES.find(t => t.id === effectiveTheme)?.name}</strong>
+            </span>
+          </div>
+
+          {/* Temas Pretos & Escuros */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
+              <Moon className="w-4 h-4 text-slate-400" />
+              <span>Temas Pretos & Escuros</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {darkThemes.map(theme => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => handleThemeChange(theme.id)}
+                  className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between h-28 ${
+                    selectedTheme === theme.id
+                      ? 'border-rose-500 bg-rose-950/20 shadow-md ring-1 ring-rose-500/40'
+                      : 'border-slate-800 bg-slate-950/60 hover:border-slate-700 hover:bg-slate-800/40'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-slate-200">{theme.name}</span>
+                      {selectedTheme === theme.id && <Check className="w-4 h-4 text-rose-400 shrink-0" />}
+                    </div>
+                    <p className="text-[10px] text-slate-400 line-clamp-2 leading-tight">
+                      {theme.description}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-2">
+                    <span className="w-4 h-4 rounded-full border border-white/20 shadow-sm" style={{ backgroundColor: theme.colors.bg }} title="Fundo Principal" />
+                    <span className="w-4 h-4 rounded-full border border-white/20 shadow-sm" style={{ backgroundColor: theme.colors.card }} title="Cartão" />
+                    <span className="w-4 h-4 rounded-full border border-white/20 shadow-sm" style={{ backgroundColor: theme.colors.border }} title="Borda" />
+                    <span className="w-4 h-4 rounded-full border border-white/20 shadow-sm" style={{ backgroundColor: theme.colors.accent }} title="Destaque" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Temas Brancos & Claros */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
+              <Sun className="w-4 h-4 text-amber-400" />
+              <span>Temas Brancos & Claros</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {lightThemes.map(theme => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => handleThemeChange(theme.id)}
+                  className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between h-28 ${
+                    selectedTheme === theme.id
+                      ? 'border-rose-500 bg-rose-950/20 shadow-md ring-1 ring-rose-500/40'
+                      : 'border-slate-800 bg-slate-950/60 hover:border-slate-700 hover:bg-slate-800/40'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-slate-200">{theme.name}</span>
+                      {selectedTheme === theme.id && <Check className="w-4 h-4 text-rose-400 shrink-0" />}
+                    </div>
+                    <p className="text-[10px] text-slate-400 line-clamp-2 leading-tight">
+                      {theme.description}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-2">
+                    <span className="w-4 h-4 rounded-full border border-slate-400/40 shadow-sm" style={{ backgroundColor: theme.colors.bg }} title="Fundo Principal" />
+                    <span className="w-4 h-4 rounded-full border border-slate-400/40 shadow-sm" style={{ backgroundColor: theme.colors.card }} title="Cartão" />
+                    <span className="w-4 h-4 rounded-full border border-slate-400/40 shadow-sm" style={{ backgroundColor: theme.colors.border }} title="Borda" />
+                    <span className="w-4 h-4 rounded-full border border-slate-400/40 shadow-sm" style={{ backgroundColor: theme.colors.accent }} title="Destaque" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Programado & Automático */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
+              <Clock className="w-4 h-4 text-indigo-400" />
+              <span>Modos Inteligentes & Programados</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {autoThemes.map(theme => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => handleThemeChange(theme.id)}
+                  className={`p-3.5 rounded-xl border text-left transition-all ${
+                    selectedTheme === theme.id
+                      ? 'border-indigo-500 bg-indigo-950/20 shadow-md ring-1 ring-indigo-500/40'
+                      : 'border-slate-800 bg-slate-950/60 hover:border-slate-700 hover:bg-slate-800/40'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      {theme.id === 'system' ? (
+                        <Monitor className="w-4 h-4 text-indigo-400" />
+                      ) : (
+                        <Clock className="w-4 h-4 text-amber-400" />
+                      )}
+                      <span className="text-xs font-bold text-slate-200">{theme.name}</span>
+                    </div>
+                    {selectedTheme === theme.id && <Check className="w-4 h-4 text-indigo-400 shrink-0" />}
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-tight">
+                    {theme.description}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            {/* Inputs de Horário para Programado */}
+            {selectedTheme === 'scheduled' && (
+              <div className="mt-3 p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-200 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    Horários de Transição Automática
+                  </span>
+                  <span className="text-[11px] text-amber-300 font-medium">
+                    Ativo agora: {effectiveTheme.startsWith('light') ? '☀️ Modo Diurno (Claro)' : '🌙 Modo Noturno (Escuro)'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-slate-400 flex items-center gap-1">
+                      <Sun className="w-3 h-3 text-amber-400" /> Início do Modo Claro (Dia)
+                    </label>
+                    <input
+                      type="time"
+                      value={scheduleDayStart}
+                      onChange={(e) => {
+                        setScheduleDayStart(e.target.value);
+                        ThemeService.setScheduleSettings(e.target.value, scheduleNightStart);
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-100 focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-slate-400 flex items-center gap-1">
+                      <Moon className="w-3 h-3 text-slate-400" /> Início do Modo Escuro (Noite)
+                    </label>
+                    <input
+                      type="time"
+                      value={scheduleNightStart}
+                      onChange={(e) => {
+                        setScheduleNightStart(e.target.value);
+                        ThemeService.setScheduleSettings(scheduleDayStart, e.target.value);
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Section 2: AI Engine & Local LLMs */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

@@ -47,8 +47,35 @@ export interface TaskHistoryItem {
 
 export type AIProviderType = 'gemini' | 'ollama' | 'offline';
 
+export type ThemeId = 
+  | 'dark-slate'    // Escuro Moderno (Slate)
+  | 'dark-oled'     // Preto Ônix (OLED Puro)
+  | 'dark-midnight' // Meia-Noite Cyber
+  | 'light-pure'    // Branco Puro Minimalista
+  | 'light-slate'   // Claro Suave (Soft Silver)
+  | 'light-warm'    // Papel Nobre (Warm Paper)
+  | 'system'        // Sincronizado com o Sistema Operacional
+  | 'scheduled';    // Programado por Horário (Dia/Noite automático)
+
+export interface ThemeDefinition {
+  id: ThemeId;
+  name: string;
+  category: 'dark' | 'light' | 'auto';
+  description: string;
+  colors: {
+    bg: string;
+    card: string;
+    nav: string;
+    border: string;
+    text: string;
+    accent: string;
+  };
+}
+
 export interface AppPreferences {
-  theme: 'dark' | 'light' | 'system';
+  theme: ThemeId;
+  themeDayStart?: string; // ex: "06:00"
+  themeNightStart?: string; // ex: "18:00"
   aiProvider: AIProviderType;
   geminiApiKey: string;
   ollamaUrl: string;

@@ -34,6 +34,7 @@ import { UpdateModal } from './components/Common/UpdateModal';
 
 import { ToolType, AppNavMode, PDFFileInfo, TaskHistoryItem } from './types';
 import { PDFService } from './services/pdfService';
+import { ThemeService } from './services/themeService';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -87,6 +88,9 @@ export const App: React.FC = () => {
   };
 
   useEffect(() => {
+    // Apply visual theme on boot
+    ThemeService.applyTheme();
+
     // Check auto update listener
     if (window.electronAPI?.onUpdaterStatus) {
       const unsubscribe = window.electronAPI.onUpdaterStatus((data) => {

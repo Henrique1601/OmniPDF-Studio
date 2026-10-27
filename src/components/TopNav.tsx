@@ -1,6 +1,7 @@
 import React from 'react';
 import { FolderOpen, Save, X, FileText, Info, Plus, Home, Bell, Sparkles } from 'lucide-react';
 import { PDFFileInfo, AppNavMode, ToolType } from '../types';
+import { ThemeQuickSelector } from './Common/ThemeQuickSelector';
 
 interface TopNavProps {
   currentNav: AppNavMode;
@@ -96,8 +97,10 @@ export const TopNav: React.FC<TopNavProps> = ({
         </button>
       </div>
 
-      {/* Right: Actions, Update Notification & Save */}
-      <div className="flex items-center gap-3">
+      {/* Right: Actions, Theme Selector, Update Notification & Save */}
+      <div className="flex items-center gap-2.5">
+        <ThemeQuickSelector onOpenPreferences={onOpenPreferences} />
+
         {hasUpdateAvailable && (
           <button
             onClick={onOpenPreferences}

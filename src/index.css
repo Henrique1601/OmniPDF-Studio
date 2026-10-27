@@ -4,10 +4,97 @@
 
 @layer base {
   :root {
-    --color-bg: #0f172a;
-    --color-surface: #1e293b;
-    --color-surface-hover: #334155;
-    --color-border: #334155;
+    --color-bg: #0d0e12;
+    --color-surface: #18181b;
+    --color-surface-hover: #27272a;
+    --color-border: #27272a;
+
+    --app-bg: #0d0e12;
+    --main-bg: #12141a;
+    --nav-bg: #18181b;
+    --card-bg: #18181b;
+    --card-bg-subtle: #202025;
+    --hover-bg: #27272a;
+    --border-color: #27272a;
+    --border-subtle: #3f3f46;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+  }
+
+  /* OLED Pure Black */
+  [data-theme="dark-oled"] {
+    --app-bg: #000000;
+    --main-bg: #000000;
+    --nav-bg: #09090b;
+    --card-bg: #09090b;
+    --card-bg-subtle: #141418;
+    --hover-bg: #18181b;
+    --border-color: #1f1f23;
+    --border-subtle: #2e2e36;
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+  }
+
+  /* Midnight Cyber */
+  [data-theme="dark-midnight"] {
+    --app-bg: #060913;
+    --main-bg: #0a0f1d;
+    --nav-bg: #0e1629;
+    --card-bg: #0e1629;
+    --card-bg-subtle: #14203a;
+    --hover-bg: #1e293b;
+    --border-color: #1e293b;
+    --border-subtle: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+  }
+
+  /* Light Pure (Minimalist White) */
+  [data-theme="light-pure"] {
+    --app-bg: #f8fafc;
+    --main-bg: #ffffff;
+    --nav-bg: #ffffff;
+    --card-bg: #ffffff;
+    --card-bg-subtle: #f8fafc;
+    --hover-bg: #f1f5f9;
+    --border-color: #e2e8f0;
+    --border-subtle: #cbd5e1;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+  }
+
+  /* Light Slate (Soft Silver) */
+  [data-theme="light-slate"] {
+    --app-bg: #e6ebf1;
+    --main-bg: #f1f5f9;
+    --nav-bg: #f8fafc;
+    --card-bg: #ffffff;
+    --card-bg-subtle: #f8fafc;
+    --hover-bg: #e2e8f0;
+    --border-color: #cbd5e1;
+    --border-subtle: #94a3b8;
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+  }
+
+  /* Light Warm (Warm Paper / Marfim) */
+  [data-theme="light-warm"] {
+    --app-bg: #f4ede4;
+    --main-bg: #faf6f0;
+    --nav-bg: #fffdfa;
+    --card-bg: #ffffff;
+    --card-bg-subtle: #faf5ed;
+    --hover-bg: #f1e7d9;
+    --border-color: #e7ded2;
+    --border-subtle: #d5c7b3;
+    --text-primary: #292524;
+    --text-secondary: #57534e;
+    --text-muted: #78716c;
   }
 }
 
@@ -15,8 +102,9 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   user-select: none;
-  background-color: #0f172a;
-  color: #f1f5f9;
+  background-color: var(--main-bg);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Custom scrollbars */
@@ -24,16 +112,119 @@ body {
   width: 8px;
   height: 8px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: var(--app-bg);
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--border-subtle);
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: var(--text-muted);
+}
+
+/* ======================================================
+   LIGHT THEMES OVERRIDES (data-theme-group="light")
+   ====================================================== */
+html[data-theme-group="light"] header.bg-\[\#18181b\],
+html[data-theme-group="light"] aside.bg-\[\#18181b\] {
+  background-color: var(--nav-bg) !important;
+  border-color: var(--border-color) !important;
+}
+
+html[data-theme-group="light"] main.bg-\[\#12141a\],
+html[data-theme-group="light"] .bg-\[\#12141a\],
+html[data-theme-group="light"] .bg-\[\#0d0e12\] {
+  background-color: var(--main-bg) !important;
+}
+
+html[data-theme-group="light"] .bg-\[\#18181b\] {
+  background-color: var(--card-bg) !important;
+}
+
+html[data-theme-group="light"] .border-\[\#27272a\],
+html[data-theme-group="light"] .border-\[\#3f3f46\],
+html[data-theme-group="light"] .border-slate-800,
+html[data-theme-group="light"] .border-slate-700 {
+  border-color: var(--border-color) !important;
+}
+
+/* Light text adaptations */
+html[data-theme-group="light"] h1.text-white,
+html[data-theme-group="light"] h2.text-white,
+html[data-theme-group="light"] h3.text-white,
+html[data-theme-group="light"] h4.text-white,
+html[data-theme-group="light"] span.text-white:not([class*="bg-"]),
+html[data-theme-group="light"] p.text-slate-100,
+html[data-theme-group="light"] span.text-slate-100,
+html[data-theme-group="light"] div.text-slate-100 {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme-group="light"] .text-slate-400,
+html[data-theme-group="light"] .text-slate-300 {
+  color: var(--text-secondary) !important;
+}
+
+/* Input fields in light mode */
+html[data-theme-group="light"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme-group="light"] textarea,
+html[data-theme-group="light"] select {
+  background-color: var(--card-bg-subtle) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Interactive elements in light mode */
+html[data-theme-group="light"] .bg-\[\#27272a\] {
+  background-color: var(--hover-bg) !important;
+}
+html[data-theme-group="light"] .hover\:bg-\[\#27272a\]:hover {
+  background-color: var(--hover-bg) !important;
+}
+html[data-theme-group="light"] .hover\:bg-slate-800:hover,
+html[data-theme-group="light"] .hover\:bg-slate-800\/50:hover {
+  background-color: var(--hover-bg) !important;
+}
+html[data-theme-group="light"] .bg-slate-900,
+html[data-theme-group="light"] .bg-slate-950 {
+  background-color: var(--card-bg) !important;
+}
+
+/* ======================================================
+   DARK OLED OVERRIDES (data-theme="dark-oled")
+   ====================================================== */
+html[data-theme="dark-oled"] main.bg-\[\#12141a\],
+html[data-theme="dark-oled"] .bg-\[\#12141a\],
+html[data-theme="dark-oled"] .bg-\[\#0d0e12\] {
+  background-color: #000000 !important;
+}
+html[data-theme="dark-oled"] header.bg-\[\#18181b\],
+html[data-theme="dark-oled"] aside.bg-\[\#18181b\],
+html[data-theme="dark-oled"] .bg-\[\#18181b\] {
+  background-color: #09090b !important;
+  border-color: #1f1f23 !important;
+}
+html[data-theme="dark-oled"] .border-\[\#27272a\],
+html[data-theme="dark-oled"] .border-\[\#3f3f46\] {
+  border-color: #1f1f23 !important;
+}
+
+/* ======================================================
+   DARK MIDNIGHT OVERRIDES (data-theme="dark-midnight")
+   ====================================================== */
+html[data-theme="dark-midnight"] main.bg-\[\#12141a\],
+html[data-theme="dark-midnight"] .bg-\[\#12141a\],
+html[data-theme="dark-midnight"] .bg-\[\#0d0e12\] {
+  background-color: #080d1a !important;
+}
+html[data-theme="dark-midnight"] header.bg-\[\#18181b\],
+html[data-theme="dark-midnight"] aside.bg-\[\#18181b\],
+html[data-theme="dark-midnight"] .bg-\[\#18181b\] {
+  background-color: #0e1629 !important;
+  border-color: #1e293b !important;
+}
+html[data-theme="dark-midnight"] .border-\[\#27272a\],
+html[data-theme="dark-midnight"] .border-\[\#3f3f46\] {
+  border-color: #1e293b !important;
 }
