@@ -19,7 +19,7 @@ export const PreferencesView: React.FC<PreferencesViewProps> = ({ onShowMessage 
   const [ocrLang, setOcrLang] = useState(() => localStorage.getItem('omnipdf_ocr_lang') || 'por');
   const [compression, setCompression] = useState(() => localStorage.getItem('omnipdf_compression') || 'recommended');
   const [autoUpdate, setAutoUpdate] = useState(() => localStorage.getItem('omnipdf_auto_update') !== 'false');
-  const [appVersion, setAppVersion] = useState('1.1.0');
+  const [appVersion, setAppVersion] = useState('1.1.1');
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<string | null>(null);
 
