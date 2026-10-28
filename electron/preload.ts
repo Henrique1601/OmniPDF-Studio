@@ -16,6 +16,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   closeWindow: () => ipcRenderer.send('window:close'),
   getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
   
+  // File association & external open
+  getInitialFile: () => ipcRenderer.invoke('app:getInitialFile'),
+  onOpenFileExternal: (callback: (filePath: string) => void) => {
+    const subscription = (_: any, filePath: string) => callback(filePath);
+    ipcRenderer.on('app:openFileExternal', subscription);
+    return () => ipcRenderer.removeListener('app:openFileExternal', subscription);
+  },
+
   // Auto-updater
   checkForUpdates: () => ipcRenderer.invoke('updater:check'),
   downloadUpdate: () => ipcRenderer.invoke('updater:download'),

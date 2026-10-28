@@ -127,6 +127,10 @@ export interface ElectronAPI {
   closeWindow: () => void;
   getAppVersion: () => Promise<string>;
   
+  // File association & external open
+  getInitialFile?: () => Promise<string | null>;
+  onOpenFileExternal?: (callback: (filePath: string) => void) => () => void;
+
   // Auto-updater
   checkForUpdates: () => Promise<any>;
   downloadUpdate: () => Promise<boolean>;

@@ -74,7 +74,8 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
@@ -87,6 +88,15 @@
       "provider": "github",
       "owner": "Henrique1601",
       "repo": "OmniPDF-Studio"
-    }
+    },
+    "fileAssociations": [
+      {
+        "ext": "pdf",
+        "name": "Documento PDF",
+        "description": "Documento em Formato PDF",
+        "role": "Editor",
+        "icon": "build/icon.ico"
+      }
+    ]
   }
 }

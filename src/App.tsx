@@ -42,6 +42,38 @@ export const App: React.FC = () => {
   const [currentTool, setCurrentTool] = useState<ToolType | null>(null);
   const [currentFile, setCurrentFile] = useState<PDFFileInfo | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      return localStorage.getItem('omnipdf_theme') === 'light' ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  const handleToggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      if (next === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      localStorage.setItem('omnipdf_theme', next);
+      showToast(next === 'dark' ? 'Modo Escuro ativado' : 'Modo Claro (Branco) ativado', 'success');
+      return next;
+    });
+  };
+
+  const handleSetTheme = (newTheme: 'dark' | 'light') => {
+    setTheme(newTheme);
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('omnipdf_theme', newTheme);
+  };
+
   const [hasUpdateAvailable, setHasUpdateAvailable] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<{ version?: string; releaseDate?: string; releaseNotes?: string } | null>(null);
@@ -87,6 +119,32 @@ export const App: React.FC = () => {
     });
   };
 
+  const loadPdfFromPath = async (filePath: string) => {
+    try {
+      if (!window.electronAPI) return;
+      const data = await window.electronAPI.readFile(filePath);
+      const name = filePath.split(/[\\/]/).pop() || 'documento.pdf';
+      const pageCount = await PDFService.getPageCount(data);
+
+      const fileInfo: PDFFileInfo = {
+        id: Math.random().toString(),
+        name,
+        path: filePath,
+        size: data.byteLength,
+        pageCount,
+        data,
+        lastOpened: Date.now()
+      };
+
+      setCurrentFile(fileInfo);
+      addToRecents(fileInfo);
+      setCurrentNav('tools');
+      showToast(`Documento "${name}" carregado!`, 'success');
+    } catch (err: any) {
+      showToast(`Erro ao abrir documento: ${err.message}`, 'error');
+    }
+  };
+
   useEffect(() => {
     // Apply visual theme on boot
     ThemeService.applyTheme();
@@ -109,6 +167,75 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  // Listen to file associations and external file opening
+  useEffect(() => {
+    if (window.electronAPI) {
+      window.electronAPI.getInitialFile?.().then((filePath) => {
+        if (filePath) {
+          loadPdfFromPath(filePath);
+        }
+      });
+
+      const unsubscribe = window.electronAPI.onOpenFileExternal?.((filePath) => {
+        if (filePath) {
+          loadPdfFromPath(filePath);
+        }
+      });
+
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }
+  }, []);
+
+  // Global Drag and Drop support for PDF files
+  useEffect(() => {
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const handleDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        if (file.name.toLowerCase().endsWith('.pdf')) {
+          if (window.electronAPI && (file as any).path) {
+            loadPdfFromPath((file as any).path);
+          } else {
+            const data = await file.arrayBuffer();
+            const pageCount = await PDFService.getPageCount(data);
+            const fileInfo: PDFFileInfo = {
+              id: Math.random().toString(),
+              name: file.name,
+              size: file.size,
+              pageCount,
+              data,
+              lastOpened: Date.now()
+            };
+            setCurrentFile(fileInfo);
+            addToRecents(fileInfo);
+            setCurrentNav('tools');
+            showToast(`Documento "${file.name}" carregado!`, 'success');
+          }
+        } else {
+          showToast('Por favor, solte um arquivo PDF válido.', 'error');
+        }
+      }
+    };
+
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('drop', handleDrop);
+
+    return () => {
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('drop', handleDrop);
+    };
+  }, []);
+
   const handleOpenFile = async () => {
     try {
       if (window.electronAPI) {
@@ -118,24 +245,7 @@ export const App: React.FC = () => {
         });
 
         if (filePaths && filePaths.length > 0) {
-          const filePath = filePaths[0];
-          const data = await window.electronAPI.readFile(filePath);
-          const name = filePath.split(/[\\/]/).pop() || 'documento.pdf';
-          const pageCount = await PDFService.getPageCount(data);
-
-          const fileInfo: PDFFileInfo = {
-            id: Math.random().toString(),
-            name,
-            path: filePath,
-            size: data.byteLength,
-            pageCount,
-            data,
-            lastOpened: Date.now()
-          };
-
-          setCurrentFile(fileInfo);
-          addToRecents(fileInfo);
-          showToast(`Documento "${name}" carregado com sucesso!`, 'success');
+          await loadPdfFromPath(filePaths[0]);
         }
       } else {
         const input = document.createElement('input');
@@ -226,7 +336,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#090d16] text-slate-100 font-sans">
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 font-sans transition-colors">
       {/* Collapsible Sidebar (iLovePDF Hub match) */}
       <Sidebar
         currentNav={currentNav}
@@ -252,7 +362,10 @@ export const App: React.FC = () => {
           onCloseFile={() => setCurrentFile(null)}
           activeToolName={currentTool ? toolLabels[currentTool] : 'Hub'}
           hasUpdateAvailable={hasUpdateAvailable}
-          onOpenPreferences={() => setIsUpdateModalOpen(true)}
+          onOpenPreferences={() => {
+            setCurrentTool(null);
+            setCurrentNav('preferences');
+          }}
         />
 
         {/* Viewport: Either Active Tool or Hub Nav View */}

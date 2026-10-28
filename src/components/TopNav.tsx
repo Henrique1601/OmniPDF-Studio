@@ -37,8 +37,8 @@ export const TopNav: React.FC<TopNavProps> = ({
   };
 
   return (
-    <header className="h-11 bg-[#18181b] border-b border-[#27272a] flex items-center justify-between px-3 shrink-0 select-none">
-      {/* Left: Tab bar (Exact iLovePDF match: Home tab, Document Tab, + Tab) */}
+    <header className="h-11 bg-[#18181b] border-b border-[#27272a] flex items-center justify-between px-3 shrink-0 select-none transition-colors">
+      {/* Left: Tab bar */}
       <div className="flex items-center gap-1.5 overflow-x-auto">
         <button
           onClick={() => {
@@ -97,7 +97,7 @@ export const TopNav: React.FC<TopNavProps> = ({
         </button>
       </div>
 
-      {/* Right: Actions, Theme Selector, Update Notification & Save */}
+      {/* Right: Actions, Theme Quick Selector, Update Notification & Save */}
       <div className="flex items-center gap-2.5">
         <ThemeQuickSelector onOpenPreferences={onOpenPreferences} />
 
@@ -107,7 +107,7 @@ export const TopNav: React.FC<TopNavProps> = ({
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-semibold animate-pulse"
           >
             <Bell className="w-3 h-3" />
-            <span>Atualização Disponível!</span>
+            <span>Atualização!</span>
           </button>
         )}
 
