@@ -10,6 +10,7 @@ process.env.VITE_PUBLIC = app.isPackaged
 
 let win: BrowserWindow | null = null;
 let initialPdfPath: string | null = null;
+let initialToolId: string | null = null;
 
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
 
@@ -18,6 +19,16 @@ function findPdfInArgs(args: string[]): string | null {
   for (const arg of args) {
     if (typeof arg === 'string' && arg.toLowerCase().endsWith('.pdf') && !arg.startsWith('--')) {
       return path.resolve(arg);
+    }
+  }
+  return null;
+}
+
+// Extract specific tool from arguments (Windows Taskbar JumpList)
+function findToolInArgs(args: string[]): string | null {
+  for (const arg of args) {
+    if (typeof arg === 'string' && arg.startsWith('--tool=')) {
+      return arg.split('=')[1] || null;
     }
   }
   return null;
@@ -36,12 +47,17 @@ if (!gotTheLock) {
       if (targetPdf) {
         win.webContents.send('app:openFileExternal', targetPdf);
       }
+      const targetTool = findToolInArgs(commandLine);
+      if (targetTool) {
+        win.webContents.send('app:openToolExternal', targetTool);
+      }
     }
   });
 }
 
 // Capture initial file from argv if present
 initialPdfPath = findPdfInArgs(process.argv);
+initialToolId = findToolInArgs(process.argv);
 
 // Configure autoUpdater
 autoUpdater.autoDownload = false;
@@ -80,6 +96,63 @@ function setupAutoUpdater() {
   autoUpdater.on('update-downloaded', (info) => {
     win?.webContents.send('updater:status', { status: 'downloaded', version: info.version });
   });
+}
+
+
+// Windows Taskbar JumpList configuration
+function setupJumpList() {
+  if (process.platform !== 'win32') return;
+  try {
+    app.setJumpList([
+      {
+        type: 'custom',
+        name: 'Tarefas Frequentes',
+        items: [
+          {
+            type: 'task',
+            title: 'Editar Texto (TrueEdit)',
+            description: 'Edição direta de texto no PDF',
+            program: process.execPath,
+            args: '--tool=trueedit',
+            iconPath: process.execPath,
+            iconIndex: 0
+          },
+          {
+            type: 'task',
+            title: 'Comprimir PDF',
+            description: 'Reduzir tamanho sem perder qualidade',
+            program: process.execPath,
+            args: '--tool=compress',
+            iconPath: process.execPath,
+            iconIndex: 0
+          },
+          {
+            type: 'task',
+            title: 'Chat com IA (Gemini & Ollama)',
+            description: 'Pergunte e analise documentos com IA',
+            program: process.execPath,
+            args: '--tool=ai-chat',
+            iconPath: process.execPath,
+            iconIndex: 0
+          },
+          {
+            type: 'task',
+            title: 'Juntar Múltiplos PDFs',
+            description: 'Combinar PDFs em um único arquivo',
+            program: process.execPath,
+            args: '--tool=merge',
+            iconPath: process.execPath,
+            iconIndex: 0
+          }
+        ]
+      },
+      {
+        type: 'recent'
+      }
+    ]);
+  } catch (e) {
+    console.warn('Failed to configure Windows JumpList:', e);
+  }
 }
 
 function createWindow() {
@@ -145,6 +218,10 @@ function createWindow() {
       win?.webContents.send('app:openFileExternal', initialPdfPath);
       initialPdfPath = null;
     }
+    if (initialToolId) {
+      win?.webContents.send('app:openToolExternal', initialToolId);
+      initialToolId = null;
+    }
   });
 
   if (VITE_DEV_SERVER_URL) {
@@ -156,10 +233,24 @@ function createWindow() {
   // Setup auto-updater only if not running in Store sandbox
   if (!process.windowsStore) {
     setupAutoUpdater();
+    setupJumpList();
   }
 }
 
 // IPC Handlers
+// Native Taskbar Progress Bar & Tool Launcher
+ipcMain.handle('app:getInitialTool', () => {
+  const tool = initialToolId;
+  initialToolId = null;
+  return tool;
+});
+
+ipcMain.on('window:setProgressBar', (_, progress: number) => {
+  if (win && typeof progress === 'number') {
+    win.setProgressBar(Math.max(-1, Math.min(1, progress)));
+  }
+});
+
 ipcMain.handle('app:getInitialFile', () => {
   const file = initialPdfPath;
   initialPdfPath = null;

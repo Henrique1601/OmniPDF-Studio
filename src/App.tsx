@@ -1,30 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { TopNav } from './components/TopNav';
 import { ReaderView } from './components/ReaderView';
-import { MergeTool } from './components/Tools/MergeTool';
-import { SplitTool } from './components/Tools/SplitTool';
-import { OrganizeTool } from './components/Tools/OrganizeTool';
-import { CompressTool } from './components/Tools/CompressTool';
-import { WatermarkTool } from './components/Tools/WatermarkTool';
-import { ProtectTool } from './components/Tools/ProtectTool';
-import { ConvertTool } from './components/Tools/ConvertTool';
-import { ImagesToPdfTool } from './components/Tools/ImagesToPdfTool';
-import { EditTool } from './components/Tools/EditTool';
-import { DirectTextEditTool } from './components/Tools/DirectTextEditTool';
-import { SignatureTool } from './components/Tools/SignatureTool';
-import { PageNumberTool } from './components/Tools/PageNumberTool';
-import { HighlightTool } from './components/Tools/HighlightTool';
-import { AiChatTool } from './components/Tools/AiChatTool';
-import { OcrTool } from './components/Tools/OcrTool';
-import { RedactTool } from './components/Tools/RedactTool';
-import { CompareTool } from './components/Tools/CompareTool';
-import { BatchTool } from './components/Tools/BatchTool';
-import { UnlockTool } from './components/Tools/UnlockTool';
-import { TranslatorTool } from './components/Tools/TranslatorTool';
-import { ContractAuditTool } from './components/Tools/ContractAuditTool';
-import { FolderRagTool } from './components/Tools/FolderRagTool';
+import { ToolsCatalogView } from './components/Views/ToolsCatalogView';
+import { HomeView } from './components/Views/HomeView';
+import { RecentsView } from './components/Views/RecentsView';
+import { TaskHistoryView } from './components/Views/TaskHistoryView';
+import { PreferencesView } from './components/Views/PreferencesView';
+import { UpdateModal } from './components/Common/UpdateModal';
+import { CommandPaletteModal } from './components/Common/CommandPaletteModal';
+import { ToolLoadingFallback } from './components/Common/ToolLoadingFallback';
+import { GlobalErrorBoundary } from './components/Common/GlobalErrorBoundary';
 
+// Lazy-loaded heavy tools for optimal code-splitting and instant initial boot
+const MergeTool = lazy(() => import('./components/Tools/MergeTool').then(m => ({ default: m.MergeTool })));
+const SplitTool = lazy(() => import('./components/Tools/SplitTool').then(m => ({ default: m.SplitTool })));
+const OrganizeTool = lazy(() => import('./components/Tools/OrganizeTool').then(m => ({ default: m.OrganizeTool })));
+const CompressTool = lazy(() => import('./components/Tools/CompressTool').then(m => ({ default: m.CompressTool })));
+const WatermarkTool = lazy(() => import('./components/Tools/WatermarkTool').then(m => ({ default: m.WatermarkTool })));
+const ProtectTool = lazy(() => import('./components/Tools/ProtectTool').then(m => ({ default: m.ProtectTool })));
+const ConvertTool = lazy(() => import('./components/Tools/ConvertTool').then(m => ({ default: m.ConvertTool })));
+const ImagesToPdfTool = lazy(() => import('./components/Tools/ImagesToPdfTool').then(m => ({ default: m.ImagesToPdfTool })));
+const EditTool = lazy(() => import('./components/Tools/EditTool').then(m => ({ default: m.EditTool })));
+const DirectTextEditTool = lazy(() => import('./components/Tools/DirectTextEditTool').then(m => ({ default: m.DirectTextEditTool })));
+const SignatureTool = lazy(() => import('./components/Tools/SignatureTool').then(m => ({ default: m.SignatureTool })));
+const PageNumberTool = lazy(() => import('./components/Tools/PageNumberTool').then(m => ({ default: m.PageNumberTool })));
+const HighlightTool = lazy(() => import('./components/Tools/HighlightTool').then(m => ({ default: m.HighlightTool })));
+const AiChatTool = lazy(() => import('./components/Tools/AiChatTool').then(m => ({ default: m.AiChatTool })));
+const OcrTool = lazy(() => import('./components/Tools/OcrTool').then(m => ({ default: m.OcrTool })));
+const RedactTool = lazy(() => import('./components/Tools/RedactTool').then(m => ({ default: m.RedactTool })));
+const CompareTool = lazy(() => import('./components/Tools/CompareTool').then(m => ({ default: m.CompareTool })));
+const BatchTool = lazy(() => import('./components/Tools/BatchTool').then(m => ({ default: m.BatchTool })));
+const UnlockTool = lazy(() => import('./components/Tools/UnlockTool').then(m => ({ default: m.UnlockTool })));
+const TranslatorTool = lazy(() => import('./components/Tools/TranslatorTool').then(m => ({ default: m.TranslatorTool })));
+const ContractAuditTool = lazy(() => import('./components/Tools/ContractAuditTool').then(m => ({ default: m.ContractAuditTool })));
+const FolderRagTool = lazy(() => import('./components/Tools/FolderRagTool').then(m => ({ default: m.FolderRagTool })));
 import { ToolsCatalogView } from './components/Views/ToolsCatalogView';
 import { HomeView } from './components/Views/HomeView';
 import { RecentsView } from './components/Views/RecentsView';
@@ -76,6 +86,7 @@ export const App: React.FC = () => {
 
   const [hasUpdateAvailable, setHasUpdateAvailable] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<{ version?: string; releaseDate?: string; releaseNotes?: string } | null>(null);
   const [recentFiles, setRecentFiles] = useState<PDFFileInfo[]>([]);
   const [taskHistory, setTaskHistory] = useState<TaskHistoryItem[]>(() => {
@@ -366,10 +377,13 @@ export const App: React.FC = () => {
             setCurrentTool(null);
             setCurrentNav('preferences');
           }}
+          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         />
 
         {/* Viewport: Either Active Tool or Hub Nav View */}
         <main className="flex-1 flex overflow-hidden relative">
+        <GlobalErrorBoundary onResetToHome={() => { setCurrentTool(null); setCurrentNav('home'); }}>
+          <Suspense fallback={<ToolLoadingFallback toolName={currentTool ? toolLabels[currentTool] : undefined} />}>
           {/* Active Dedicated Tool Modes */}
           {currentTool === 'reader' && (
             <ReaderView file={currentFile} onOpenFile={handleOpenFile} />
@@ -625,12 +639,41 @@ export const App: React.FC = () => {
             <PreferencesView onShowMessage={showToast} />
           )}
 
-          {/* In-App Auto-Update Modal */}
-          <UpdateModal
-            isOpen={isUpdateModalOpen}
-            onClose={() => setIsUpdateModalOpen(false)}
-            updateData={updateInfo}
-          />
+          </Suspense>
+        </GlobalErrorBoundary>
+
+        {/* Universal Command Palette (Ctrl + K) */}
+        <CommandPaletteModal
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          onOpenFile={handleOpenFile}
+          onSaveFile={currentFile ? handleSaveCurrentFile : undefined}
+          onCloseFile={currentFile ? () => setCurrentFile(null) : undefined}
+          onSelectTool={handleSelectTool}
+          onSelectNav={(nav) => {
+            setCurrentTool(null);
+            setCurrentNav(nav);
+          }}
+          currentFile={currentFile}
+          recentFiles={recentFiles}
+          onOpenRecent={(f) => {
+            setCurrentFile(f);
+            setCurrentTool('reader');
+          }}
+          onToggleTheme={() => {
+            const current = ThemeService.getSelectedTheme();
+            const next = current.startsWith('dark') ? 'light-pure' : 'dark-slate';
+            ThemeService.setSelectedTheme(next);
+            showToast(`Tema alterado para: ${next}`, 'success');
+          }}
+        />
+
+        {/* In-App Auto-Update Modal */}
+        <UpdateModal
+          isOpen={isUpdateModalOpen}
+          onClose={() => setIsUpdateModalOpen(false)}
+          updateData={updateInfo}
+        />
 
           {/* Toast Notification */}
           {toast && (

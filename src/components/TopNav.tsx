@@ -1,5 +1,5 @@
 import React from 'react';
-import { FolderOpen, Save, X, FileText, Info, Plus, Home, Bell, Sparkles } from 'lucide-react';
+import { FolderOpen, Save, X, FileText, Info, Plus, Home, Bell, Sparkles, Search } from 'lucide-react';
 import { PDFFileInfo, AppNavMode, ToolType } from '../types';
 import { ThemeQuickSelector } from './Common/ThemeQuickSelector';
 
@@ -15,6 +15,7 @@ interface TopNavProps {
   activeToolName: string;
   hasUpdateAvailable?: boolean;
   onOpenPreferences: () => void;
+  onOpenCommandPalette?: () => void;
 }
 
 export const TopNav: React.FC<TopNavProps> = ({
@@ -28,7 +29,8 @@ export const TopNav: React.FC<TopNavProps> = ({
   onCloseFile,
   activeToolName,
   hasUpdateAvailable,
-  onOpenPreferences
+  onOpenPreferences,
+  onOpenCommandPalette
 }) => {
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -96,6 +98,22 @@ export const TopNav: React.FC<TopNavProps> = ({
           <Plus className="w-3.5 h-3.5" />
         </button>
       </div>
+
+      {/* Center: Command Palette Trigger Button */}
+      {onOpenCommandPalette && (
+        <button
+          type="button"
+          onClick={onOpenCommandPalette}
+          title="Abrir Command Palette e Busca Rápida (Ctrl + K)"
+          className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-900/60 hover:bg-slate-800 border border-slate-800 text-xs text-slate-400 hover:text-slate-200 transition-all shadow-sm"
+        >
+          <Search className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-[11px] font-medium">Buscar ferramentas...</span>
+          <kbd className="px-1.5 py-0.5 text-[9px] font-mono font-semibold bg-slate-800 border border-slate-700 text-slate-400 rounded ml-1">
+            Ctrl+K
+          </kbd>
+        </button>
+      )}
 
       {/* Right: Actions, Theme Quick Selector, Update Notification & Save */}
       <div className="flex items-center gap-2.5">

@@ -36,7 +36,7 @@ export const OcrTool: React.FC<OcrToolProps> = ({ currentFile, onOpenFile, onSho
 
     try {
       setProcessing(true);
-      setProgress(10);
+      setProgress(10); window.electronAPI?.setProgressBar?.(0.1);
       setStatusText('Renderizando imagem de alta definição da página...');
 
       // Render high quality page image (scale 2.5)
@@ -48,23 +48,23 @@ export const OcrTool: React.FC<OcrToolProps> = ({ currentFile, onOpenFile, onSho
         2.5
       );
 
-      setProgress(25);
+      setProgress(25); window.electronAPI?.setProgressBar?.(0.25);
       setStatusText(`Inicializando motor OCR offline (${lang.toUpperCase()})...`);
 
       const worker = await createWorker(lang);
 
-      setProgress(45);
+      setProgress(45); window.electronAPI?.setProgressBar?.(0.45);
       setStatusText('Reconhecendo caracteres e layout do texto...');
 
       const ret = await worker.recognize(pageDataUrl);
 
-      setProgress(95);
+      setProgress(95); window.electronAPI?.setProgressBar?.(0.95);
       setStatusText('Finalizando extração...');
 
       setOcrText(ret.data.text);
       await worker.terminate();
 
-      setProgress(100);
+      setProgress(100); window.electronAPI?.setProgressBar?.(-1);
       setStatusText('Concluído!');
       onShowMessage(`OCR da página ${currentPage} finalizado com sucesso!`, 'success');
     } catch (err: any) {
@@ -72,6 +72,7 @@ export const OcrTool: React.FC<OcrToolProps> = ({ currentFile, onOpenFile, onSho
       onShowMessage(`Erro durante OCR: ${err.message}`, 'error');
     } finally {
       setProcessing(false);
+      window.electronAPI?.setProgressBar?.(-1);
     }
   };
 

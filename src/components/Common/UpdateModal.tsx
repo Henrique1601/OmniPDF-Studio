@@ -24,6 +24,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ isOpen, onClose, updat
         if (data.status === 'downloading') {
           setDownloading(true);
           setProgress(data.percent || 0);
+        window.electronAPI?.setProgressBar?.((data.percent || 0) / 100);
           if (data.bytesPerSecond) {
             setSpeed(data.bytesPerSecond);
           }
@@ -31,6 +32,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ isOpen, onClose, updat
           setDownloading(false);
           setDownloaded(true);
           setProgress(100);
+        window.electronAPI?.setProgressBar?.(-1);
         } else if (data.status === 'error') {
           setDownloading(false);
           setError(data.error || 'Erro ao processar atualização.');

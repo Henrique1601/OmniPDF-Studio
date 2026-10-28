@@ -28,6 +28,7 @@ export const CompressTool: React.FC<CompressToolProps> = ({ currentFile, onOpenF
 
     try {
       setProcessing(true);
+      window.electronAPI?.setProgressBar?.(0.6);
       const compressedBytes = await PDFService.compressPdf(currentFile.data);
       setCompressedResult({
         originalSize: currentFile.size,
@@ -39,6 +40,7 @@ export const CompressTool: React.FC<CompressToolProps> = ({ currentFile, onOpenF
       onShowMessage(`Erro ao compactar PDF: ${err.message}`, 'error');
     } finally {
       setProcessing(false);
+      window.electronAPI?.setProgressBar?.(-1);
     }
   };
 

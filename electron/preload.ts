@@ -24,6 +24,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('app:openFileExternal', subscription);
   },
 
+  // JumpList / External tool launcher
+  getInitialTool: () => ipcRenderer.invoke('app:getInitialTool'),
+  onOpenToolExternal: (callback: (toolId: string) => void) => {
+    const subscription = (_: any, toolId: string) => callback(toolId);
+    ipcRenderer.on('app:openToolExternal', subscription);
+    return () => ipcRenderer.removeListener('app:openToolExternal', subscription);
+  },
+
+  // Taskbar native progress (0.0 to 1.0, or -1 to disable)
+  setProgressBar: (progress: number) => ipcRenderer.send('window:setProgressBar', progress),
+
   // Auto-updater
   checkForUpdates: () => ipcRenderer.invoke('updater:check'),
   downloadUpdate: () => ipcRenderer.invoke('updater:download'),

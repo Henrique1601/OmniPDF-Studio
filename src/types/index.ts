@@ -130,6 +130,9 @@ export interface ElectronAPI {
   // File association & external open
   getInitialFile?: () => Promise<string | null>;
   onOpenFileExternal?: (callback: (filePath: string) => void) => () => void;
+  getInitialTool?: () => Promise<string | null>;
+  onOpenToolExternal?: (callback: (toolId: string) => void) => () => void;
+  setProgressBar?: (progress: number) => void;
 
   // Auto-updater
   checkForUpdates: () => Promise<any>;
