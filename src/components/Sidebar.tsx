@@ -1,3 +1,4 @@
+import { APP_VERSION } from '../constants/version';
 import React from 'react';
 import { 
   Home,
@@ -120,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
               Offline & Seguro
             </span>
-            <span className="font-mono text-[10px]">v1.1.0</span>
+            <span className="font-mono text-[10px]">v{APP_VERSION}</span>
           </>
         ) : (
           <div className="w-full flex justify-center">

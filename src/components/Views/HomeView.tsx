@@ -1,3 +1,4 @@
+import { APP_VERSION } from '../../constants/version';
 import React from 'react';
 import { UploadCloud, FileText, ArrowRight, Sparkles, Shield, Cpu, Zap, FolderOpen } from 'lucide-react';
 import { ToolType, PDFFileInfo } from '../../types';
@@ -23,7 +24,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <div className="relative z-10 max-w-2xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold">
               <Sparkles className="w-3.5 h-3.5" />
-              OmniPDF Studio v1.0.0
+              OmniPDF Studio v{APP_VERSION}
             </div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight leading-tight">
               A mais poderosa suíte de PDF offline com IA integrada

@@ -1,0 +1,25 @@
+# OMNIPDF STUDIO — REGRAS OFICIAIS DE DESENVOLVIMENTO & RELEASE
+# Lido automaticamente por agentes de IA e desenvolvedores
+
+## 1. REGRAS CRÍTICAS DE RELEASE E SINCRONIZAÇÃO DE VERSÃO
+Toda vez que uma nova versão do aplicativo for preparada ou lançada:
+1. Atualize a versão em `package.json` (`"version": "X.Y.Z"`).
+2. Atualize a versão em `src/constants/version.ts` (`export const APP_VERSION = 'X.Y.Z'`).
+3. Atualize os links de download e textos em `landing/index.html` para `X.Y.Z`.
+4. SEMPRE realize o deploy imediato da landing page na Vercel:
+   `cd landing && npx vercel --prod --yes`
+   Verifique em `https://landing-topaz-ten-44.vercel.app` se a versão já está correta.
+5. Crie a tag no Git (`git tag vX.Y.Z && git push origin vX.Y.Z`) para disparar a compilação do instalador no GitHub Actions.
+6. NUNCA coloque versões hardcoded em componentes React (.tsx). Use SEMPRE a constante de `src/constants/version.ts`.
+
+## 2. REGRAS DE DESIGN, TEMAS & CONTRASTE VISUAL (WCAG AAA)
+1. O OmniPDF Studio possui suporte a múltiplos temas escuros (Moderno, OLED Preto Absoluto, Midnight Cyber) e temas claros (Branco Puro, Claro Suave, Papel Nobre).
+2. Todo componente DEVE ter legibilidade perfeita em qualquer modo:
+   - Em modo claro (`data-theme-group="light"` ou `data-theme^="light-"` ou `.light`), os fundos escuros e os cards com opacidade (`bg-slate-900/80`, `bg-slate-950/60`, etc.) são obrigatoriamente remapeados para fundos claros (`var(--card-bg)`).
+   - O texto deve possuir alto contraste (`var(--text-primary)` #0f172a para títulos, `var(--text-secondary)` #334155 para subtítulos).
+   - Cores de ícones em modo claro devem usar tons escuros e saturados (ex: `rose-600`, `amber-700`, `emerald-700`) e NUNCA tons pastéis claros que fiquem invisíveis contra o branco.
+   - Botões de ação com fundos vibrantes (`bg-brand-600`, `bg-rose-600`) SEMPRE mantêm o texto branco puro `#ffffff`.
+
+## 3. REGRAS DE MEMÓRIA & PERSISTÊNCIA
+1. Consulte sempre `docs/_memory/PROJECT_STATE.md` para entender o histórico recente e decisões arquiteturais.
+2. Ao realizar mudanças significativas, registre a nova versão e o sumário da alteração no documento de estado persistente.

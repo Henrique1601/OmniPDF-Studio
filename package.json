@@ -1,6 +1,6 @@
 {
   "name": "omnipdf-studio",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "OmniPDF Studio - A mais completa suíte de visualização e edição de PDF com TrueEdit, IA e ferramentas 100% offline",
   "author": "Henrique Bezerra Dos Santos",
   "license": "MIT",
@@ -27,7 +27,9 @@
     "dev": "vite",
     "build": "tsc && vite build && electron-builder --dir",
     "dist": "tsc && vite build && electron-builder",
-    "dist:portable": "tsc && vite build && electron-builder --win portable"
+    "dist:portable": "tsc && vite build && electron-builder --win portable",
+    "sync:release": "node scripts/sync-release.js",
+    "deploy:landing": "cd landing && npx vercel --prod --yes"
   },
   "dependencies": {
     "@google/genai": "^2.30.0",

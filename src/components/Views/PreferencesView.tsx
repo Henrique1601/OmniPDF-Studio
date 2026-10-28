@@ -1,3 +1,4 @@
+import { APP_VERSION } from '../../constants/version';
 import React, { useState, useEffect } from 'react';
 import { Settings, Key, Globe, Download, RefreshCw, CheckCircle2, Shield, Folder, HardDrive, Cpu, AlertCircle, Bot, Server, Loader2, Sparkles, Palette, Sun, Moon, Clock, Monitor, Check } from 'lucide-react';
 import { AppPreferences, AIProviderType, ThemeId } from '../../types';
@@ -19,7 +20,7 @@ export const PreferencesView: React.FC<PreferencesViewProps> = ({ onShowMessage 
   const [ocrLang, setOcrLang] = useState(() => localStorage.getItem('omnipdf_ocr_lang') || 'por');
   const [compression, setCompression] = useState(() => localStorage.getItem('omnipdf_compression') || 'recommended');
   const [autoUpdate, setAutoUpdate] = useState(() => localStorage.getItem('omnipdf_auto_update') !== 'false');
-  const [appVersion, setAppVersion] = useState('1.1.1');
+  const [appVersion, setAppVersion] = useState(APP_VERSION);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<string | null>(null);
 
@@ -101,7 +102,7 @@ export const PreferencesView: React.FC<PreferencesViewProps> = ({ onShowMessage 
         setUpdateStatus(`Nova versão ${res.updateInfo.version} disponível para download!`);
         onShowMessage(`Nova versão ${res.updateInfo.version} encontrada!`, 'success');
       } else {
-        setUpdateStatus('OmniPDF Studio já está na versão mais recente (v1.0.0).');
+        setUpdateStatus('OmniPDF Studio já está na versão mais recente (v' + APP_VERSION + ').');
         onShowMessage('Você está na versão mais recente!', 'success');
       }
     } catch (err: any) {

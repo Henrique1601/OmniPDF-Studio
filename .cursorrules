@@ -1,0 +1,18 @@
+# OMNIPDF STUDIO — REGRAS OFICIAIS DO CURSOR / AI ASSISTANT
+
+## 1. REGRAS DE RELEASE & VERSÃO (OBRIGATÓRIO)
+- Sincronização obrigatória em 4 pontos:
+  1. `package.json`
+  2. `src/constants/version.ts`
+  3. `landing/index.html`
+  4. Vercel: `cd landing && npx vercel --prod --yes`
+- Proibido versões hardcoded em arquivos `.tsx`. Importar sempre de `src/constants/version.ts`.
+- Tags Git devem seguir o formato `vX.Y.Z` para acionar o GitHub Actions `.github/workflows/release.yml`.
+
+## 2. REGRAS DE TEMAS & ACESSIBILIDADE
+- Todo componente deve funcionar e ter contraste perfeito em modo escuro e modo claro (Branco Puro, Claro Suave, Papel Nobre).
+- Fundo escuro remapeado em `src/index.css` para `var(--card-bg)` quando em `[data-theme-group="light"]`.
+- Textos em modo claro devem ter contraste mínimo WCAG AAA (títulos `#0f172a`, subtítulos `#334155`).
+
+## 3. MEMÓRIA & DOCUMENTAÇÃO
+- Consulte `docs/_rules/RELEASE_SYNC_PROTOCOL.md` e `docs/_memory/PROJECT_STATE.md`.
