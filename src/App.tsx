@@ -199,6 +199,93 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  // Global Keyboard Shortcuts (Ctrl+K, Ctrl+O, Ctrl+S, Ctrl+W, Ctrl+, Ctrl+H)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+
+      // Ctrl + K or Cmd + K: Open / Close Universal Command Palette
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsCommandPaletteOpen((prev) => !prev);
+        return;
+      }
+
+      // Escape: Close Command Palette if open
+      if (e.key === 'Escape') {
+        if (isCommandPaletteOpen) {
+          e.preventDefault();
+          setIsCommandPaletteOpen(false);
+          return;
+        }
+      }
+
+      // If user is typing inside an input/textarea, do not intercept regular editor shortcuts
+      if (isInput) return;
+
+      // Ctrl + O: Open PDF file dialog
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') {
+        e.preventDefault();
+        handleOpenFile();
+      }
+      // Ctrl + S: Save active PDF file
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (currentFile) {
+          handleSaveCurrentFile();
+        } else {
+          showToast('Nenhum documento ativo para salvar.', 'error');
+        }
+      }
+      // Ctrl + W: Close active PDF document
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'w') {
+        e.preventDefault();
+        if (currentFile) {
+          setCurrentFile(null);
+          showToast('Documento fechado.', 'success');
+        }
+      }
+      // Ctrl + ,: Open Preferences
+      else if ((e.ctrlKey || e.metaKey) && (e.key === ',' || e.key === '<')) {
+        e.preventDefault();
+        setCurrentTool(null);
+        setCurrentNav('preferences');
+      }
+      // Ctrl + H: Go to Home
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        setCurrentTool(null);
+        setCurrentNav('home');
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown, true);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown, true);
+  }, [currentFile, isCommandPaletteOpen]);
+
+  // Listen to Windows Taskbar JumpList tool launches
+  useEffect(() => {
+    if (window.electronAPI) {
+      window.electronAPI.getInitialTool?.().then((toolId) => {
+        if (toolId) {
+          handleSelectTool(toolId as ToolType);
+        }
+      });
+
+      const unsubscribe = window.electronAPI.onOpenToolExternal?.((toolId) => {
+        if (toolId) {
+          handleSelectTool(toolId as ToolType);
+        }
+      });
+
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }
+  }, []);
+
   // Global Drag and Drop support for PDF files
   useEffect(() => {
     const handleDragOver = (e: DragEvent) => {
@@ -343,11 +430,12 @@ export const App: React.FC = () => {
   };
 
   const handleSelectTool = (tool: ToolType) => {
+    setCurrentNav('tools');
     setCurrentTool(tool);
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 font-sans transition-colors">
+    <div className="flex h-screen w-screen overflow-hidden bg-[var(--main-bg)] text-[var(--text-primary)] font-sans transition-colors">
       {/* Collapsible Sidebar (iLovePDF Hub match) */}
       <Sidebar
         currentNav={currentNav}

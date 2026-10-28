@@ -45,16 +45,16 @@ export const AVAILABLE_THEMES: ThemeDefinition[] = [
     }
   },
 
-  // --- TEMAS BRANCOS / CLAROS ---
+    // --- TEMAS BRANCOS / CLAROS ---
   {
     id: 'light-pure',
     name: 'Branco Puro',
     category: 'light',
-    description: 'Branco límpido e cristalino com estética minimalista e alto contraste.',
+    description: 'Branco límpido e minimalista tipo Apple Studio com estética clean de alta precisão.',
     colors: {
       bg: '#ffffff',
-      card: '#f8fafc',
-      nav: '#ffffff',
+      card: '#ffffff',
+      nav: '#f8fafc',
       border: '#e2e8f0',
       text: '#0f172a',
       accent: '#e11d48'
@@ -62,28 +62,28 @@ export const AVAILABLE_THEMES: ThemeDefinition[] = [
   },
   {
     id: 'light-slate',
-    name: 'Claro Suave',
+    name: 'Claro Suave (Prata)',
     category: 'light',
-    description: 'Cinza prateado suave, reduz o brilho e previne a fadiga ocular.',
+    description: 'Mesa de trabalho em cinza prateado com cartões brancos destacados, prevenindo fadiga ocular.',
     colors: {
-      bg: '#f1f5f9',
+      bg: '#e2e8f0',
       card: '#ffffff',
-      nav: '#ffffff',
+      nav: '#f1f5f9',
       border: '#cbd5e1',
-      text: '#1e293b',
-      accent: '#e11d48'
+      text: '#0f172a',
+      accent: '#0284c7'
     }
   },
   {
     id: 'light-warm',
-    name: 'Papel Nobre',
+    name: 'Papel Nobre (Marfim)',
     category: 'light',
-    description: 'Marfim acolhedor e tons de pergaminho editorial, ideal para leitura.',
+    description: 'Tons quentes de pergaminho, linho e marfim editorial, perfeito para leitura prolongada.',
     colors: {
-      bg: '#faf6f0',
-      card: '#fffdfa',
-      nav: '#fffdfa',
-      border: '#e7ded2',
+      bg: '#f5efe6',
+      card: '#fffdf9',
+      nav: '#ebe0d0',
+      border: '#cfbda4',
       text: '#292524',
       accent: '#d97706'
     }
