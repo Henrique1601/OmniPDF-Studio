@@ -148,9 +148,28 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ isOpen, onClose, updat
 
         {/* Error notice */}
         {error && (
-          <div className="p-3 rounded-2xl bg-rose-950/40 border border-rose-500/40 flex items-center gap-2.5 text-xs text-rose-300">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-            <span>{error}</span>
+          <div className="p-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/40 space-y-2.5 text-xs text-rose-300">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{error}</span>
+            </div>
+            <div className="pt-1 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  const directUrl = 'https://github.com/Henrique1601/OmniPDF-Studio/releases/latest';
+                  if (window.electronAPI?.openExternal) {
+                    window.electronAPI.openExternal(directUrl);
+                  } else {
+                    window.open(directUrl, '_blank');
+                  }
+                }}
+                className="px-3 py-1.5 bg-rose-600/30 hover:bg-rose-600/50 text-rose-200 border border-rose-500/40 rounded-xl text-[11px] font-semibold transition-colors flex items-center gap-1.5"
+              >
+                <span>Baixar Instalador Direto (.exe)</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
 

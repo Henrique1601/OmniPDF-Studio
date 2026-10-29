@@ -98,6 +98,9 @@ export interface DetectedTextItem {
   screenTop: number;
   screenWidth: number;
   screenHeight: number;
+  fontFamily?: 'sans' | 'serif' | 'mono';
+  isBold?: boolean;
+  isItalic?: boolean;
   isOcr?: boolean;
   confidence?: number;
   sampledBgColor?: { r: number; g: number; b: number };
@@ -110,9 +113,18 @@ export interface TextEditItem {
   pdfY: number;
   pdfWidth: number;
   pdfHeight: number;
+  origPdfX?: number;
+  origPdfY?: number;
+  origPdfWidth?: number;
+  origPdfHeight?: number;
+  screenLeft?: number;
+  screenTop?: number;
   originalText: string;
   newText: string;
   fontSize: number;
+  fontFamily?: 'sans' | 'serif' | 'mono';
+  isBold?: boolean;
+  isItalic?: boolean;
   textColor?: { r: number; g: number; b: number };
   bgColor?: { r: number; g: number; b: number };
 }
@@ -137,6 +149,7 @@ export interface ElectronAPI {
   onOpenToolExternal?: (callback: (toolId: string) => void) => () => void;
   setProgressBar?: (progress: number) => void;
   getPathForFile?: (file: File) => string;
+  openExternal?: (url: string) => Promise<boolean>;
 
   // Auto-updater
   checkForUpdates: () => Promise<any>;

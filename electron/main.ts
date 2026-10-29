@@ -444,6 +444,14 @@ ipcMain.handle('app:getVersion', () => {
   return app.getVersion();
 });
 
+ipcMain.handle('shell:openExternal', async (_, targetUrl: string) => {
+  if (targetUrl && (targetUrl.startsWith('https://') || targetUrl.startsWith('http://'))) {
+    await shell.openExternal(targetUrl);
+    return true;
+  }
+  return false;
+});
+
 // Updater handlers
 ipcMain.handle('updater:check', async () => {
   try {

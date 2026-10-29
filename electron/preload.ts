@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   writeFile: (filePath: string, buffer: ArrayBuffer) => ipcRenderer.invoke('fs:writeFile', filePath, buffer),
   listPdfsInDirectory: (dirPath: string) => ipcRenderer.invoke('fs:listPdfsInDirectory', dirPath),
   showItemInFolder: (filePath: string) => ipcRenderer.invoke('shell:showItemInFolder', filePath),
+  openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
   minimizeWindow: () => ipcRenderer.send('window:minimize'),
   maximizeWindow: () => ipcRenderer.send('window:maximize'),
   closeWindow: () => ipcRenderer.send('window:close'),

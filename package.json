@@ -1,6 +1,6 @@
 {
   "name": "omnipdf-studio",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "OmniPDF Studio - A mais completa suíte de visualização e edição de PDF com TrueEdit, IA e ferramentas 100% offline",
   "author": "Henrique Bezerra Dos Santos",
   "license": "MIT",
@@ -69,6 +69,7 @@
       "dist-electron/**/*"
     ],
     "win": {
+      "artifactName": "${productName}-Setup-${version}.${ext}",
       "target": [
         {
           "target": "nsis",

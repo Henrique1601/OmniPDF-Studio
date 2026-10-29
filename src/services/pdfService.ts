@@ -411,6 +411,8 @@ export class PDFService {
     const viewport = page.getViewport({ scale });
 
     const items: DetectedTextItem[] = [];
+    const styles = (textContent as any).styles || {};
+
     for (let i = 0; i < textContent.items.length; i++) {
       const item: any = textContent.items[i];
       if (!item.str || item.str.trim() === '') continue;
@@ -420,6 +422,36 @@ export class PDFService {
       const fontSize = Math.sqrt(item.transform[0] * item.transform[0] + item.transform[1] * item.transform[1]) || 12;
       const pdfWidth = item.width || (fontSize * item.str.length * 0.55);
       const pdfHeight = item.height || fontSize;
+
+      const rawFontName = (item.fontName || '').toLowerCase();
+      const styleObj = styles[item.fontName] || {};
+      const styleFamily = (styleObj.fontFamily || '').toLowerCase();
+
+      let fontFamily: 'sans' | 'serif' | 'mono' = 'sans';
+      if (
+        styleFamily.includes('serif') ||
+        rawFontName.includes('times') ||
+        rawFontName.includes('roman') ||
+        rawFontName.includes('georgia') ||
+        rawFontName.includes('garamond') ||
+        rawFontName.includes('minion')
+      ) {
+        fontFamily = 'serif';
+      } else if (
+        styleFamily.includes('mono') ||
+        rawFontName.includes('courier') ||
+        rawFontName.includes('consolas') ||
+        rawFontName.includes('monospace')
+      ) {
+        fontFamily = 'mono';
+      }
+
+      const isBold =
+        rawFontName.includes('bold') ||
+        rawFontName.includes('black') ||
+        rawFontName.includes('heavy') ||
+        rawFontName.includes('bolder');
+      const isItalic = rawFontName.includes('italic') || rawFontName.includes('oblique');
 
       const rect: [number, number, number, number] = [pdfX, pdfY, pdfX + pdfWidth, pdfY + pdfHeight];
       const [vX1, vY1, vX2, vY2] = viewport.convertToViewportRectangle(rect);
@@ -440,6 +472,9 @@ export class PDFService {
         screenTop,
         screenWidth,
         screenHeight,
+        fontFamily,
+        isBold,
+        isItalic,
       });
     }
 
@@ -578,7 +613,23 @@ export class PDFService {
     edits: TextEditItem[]
   ): Promise<Uint8Array> {
     const pdfDoc = await PDFDocument.load(data, { ignoreEncryption: true });
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    // Embed the standard typography suites to accurately reproduce any PDF font
+    const fonts = {
+      sans: await pdfDoc.embedFont(StandardFonts.Helvetica),
+      sansBold: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
+      sansItalic: await pdfDoc.embedFont(StandardFonts.HelveticaOblique),
+      sansBoldItalic: await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique),
+      serif: await pdfDoc.embedFont(StandardFonts.TimesRoman),
+      serifBold: await pdfDoc.embedFont(StandardFonts.TimesRomanBold),
+      serifItalic: await pdfDoc.embedFont(StandardFonts.TimesRomanItalic),
+      serifBoldItalic: await pdfDoc.embedFont(StandardFonts.TimesRomanBoldItalic),
+      mono: await pdfDoc.embedFont(StandardFonts.Courier),
+      monoBold: await pdfDoc.embedFont(StandardFonts.CourierBold),
+      monoItalic: await pdfDoc.embedFont(StandardFonts.CourierOblique),
+      monoBoldItalic: await pdfDoc.embedFont(StandardFonts.CourierBoldOblique),
+    };
+
     const pages = pdfDoc.getPages();
 
     for (const edit of edits) {
@@ -586,31 +637,47 @@ export class PDFService {
       if (pageIndex < 0 || pageIndex >= pages.length) continue;
       const page = pages[pageIndex];
 
-      const padX = 1.5;
-      const padY = 2;
-      const newTextWidth = font.widthOfTextAtSize(edit.newText, edit.fontSize);
-      const maskWidth = Math.max(edit.pdfWidth, newTextWidth) + padX * 2;
-      const maskHeight = Math.max(edit.pdfHeight, edit.fontSize) + padY * 2;
+      // Select matching font family and style
+      let font = fonts.sans;
+      const fam = edit.fontFamily || 'sans';
+      if (fam === 'serif') {
+        font = edit.isBold && edit.isItalic ? fonts.serifBoldItalic : edit.isBold ? fonts.serifBold : edit.isItalic ? fonts.serifItalic : fonts.serif;
+      } else if (fam === 'mono') {
+        font = edit.isBold && edit.isItalic ? fonts.monoBoldItalic : edit.isBold ? fonts.monoBold : edit.isItalic ? fonts.monoItalic : fonts.mono;
+      } else {
+        font = edit.isBold && edit.isItalic ? fonts.sansBoldItalic : edit.isBold ? fonts.sansBold : edit.isItalic ? fonts.sansItalic : fonts.sans;
+      }
 
-      // 1. Cobrir o texto antigo com uma máscara sólida limpa (geralmente branca ou cor de fundo)
+      // 1. Cover original text at its original position so old letters are fully erased
+      const origX = edit.origPdfX !== undefined ? edit.origPdfX : edit.pdfX;
+      const origY = edit.origPdfY !== undefined ? edit.origPdfY : edit.pdfY;
+      const origW = edit.origPdfWidth || edit.pdfWidth;
+      const origH = edit.origPdfHeight || edit.pdfHeight;
+
+      const padX = 2;
+      const padY = 2;
+      const maskWidth = origW + padX * 2;
+      const maskHeight = Math.max(origH, edit.fontSize) + padY * 2;
+
       const bg = edit.bgColor || { r: 1, g: 1, b: 1 };
       page.drawRectangle({
-        x: edit.pdfX - padX,
-        y: edit.pdfY - padY,
+        x: origX - padX,
+        y: origY - padY,
         width: maskWidth,
         height: maskHeight,
         color: rgb(bg.r, bg.g, bg.b),
       });
 
-      // 2. Gravar o novo texto na posição exata
+      // 2. Write new text at the new (moved / aligned) position
       const fg = edit.textColor || { r: 0, g: 0, b: 0 };
-      if (edit.newText && edit.newText.trim() !== '') { page.drawText(edit.newText, {
-        x: edit.pdfX,
-        y: edit.pdfY,
-        size: edit.fontSize,
-        font,
-        color: rgb(fg.r, fg.g, fg.b),
-      });
+      if (edit.newText && edit.newText.trim() !== '') {
+        page.drawText(edit.newText, {
+          x: edit.pdfX,
+          y: edit.pdfY,
+          size: edit.fontSize,
+          font,
+          color: rgb(fg.r, fg.g, fg.b),
+        });
       }
     }
 
