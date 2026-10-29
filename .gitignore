@@ -42,3 +42,5 @@ dist-package/
 *.njsproj
 *.sln
 *.sw?
+*.traineddata
+

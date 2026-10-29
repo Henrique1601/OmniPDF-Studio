@@ -12,12 +12,18 @@ export interface OcrRecognitionOptions {
   onProgress?: (progress: number, status: string) => void;
 }
 
+interface ParsedOcrItem {
+  text: string;
+  bbox: { x0: number; y0: number; x1: number; y1: number };
+  confidence: number;
+}
+
 class OcrServiceClass {
   private cachedWorker: Worker | null = null;
   private currentWorkerLang: string = '';
 
   /**
-   * Obtém ou inicializa um worker do Tesseract.js com cache para alta performance
+   * Obtém ou inicializa um worker do Tesseract.js com cache para alta performance (modo Web)
    */
   private async getWorker(lang: string = 'por', onProgress?: (p: number, s: string) => void): Promise<Worker> {
     if (this.cachedWorker && this.currentWorkerLang === lang) {
@@ -33,7 +39,7 @@ class OcrServiceClass {
       this.cachedWorker = null;
     }
 
-    onProgress?.(10, `Inicializando motor OCR offline (${lang.toUpperCase()})...`);
+    onProgress?.(15, `Inicializando motor OCR offline (${lang.toUpperCase()})...`);
     const worker = await createWorker(lang);
     this.cachedWorker = worker;
     this.currentWorkerLang = lang;
@@ -103,12 +109,43 @@ class OcrServiceClass {
     const level = options.level || 'words';
     const onProgress = options.onProgress;
 
-    onProgress?.(20, 'Preparando imagem de alta definição para OCR...');
-    const worker = await this.getWorker(lang, onProgress);
+    let lines: ParsedOcrItem[] = [];
+    let words: ParsedOcrItem[] = [];
 
-    onProgress?.(40, 'Analisando layout e reconhecendo texto na foto/digitalização...');
-    const ret = await worker.recognize(imageSource);
-    const pageData: any = ret.data;
+    // Prioridade 1: Execução nativa no processo Electron via IPC (Ultra-rápido, sem limites de CSP ou Web Workers)
+    if (window.electronAPI?.runOcr) {
+      onProgress?.(25, `Executando OCR nativo de alta precisão (${lang.toUpperCase()})...`);
+      const srcString = typeof imageSource === 'string' ? imageSource : imageSource.toDataURL('image/png');
+      const ocrResult = await window.electronAPI.runOcr(srcString, lang);
+      lines = ocrResult.lines || [];
+      words = ocrResult.words || [];
+    } else {
+      // Prioridade 2: Fallback Web Worker do navegador (Tesseract.js v7)
+      onProgress?.(20, 'Preparando imagem de alta definição para OCR no navegador...');
+      const worker = await this.getWorker(lang, onProgress);
+
+      onProgress?.(40, 'Analisando layout e reconhecendo texto na foto/digitalização...');
+      const ret = await worker.recognize(imageSource, {}, { blocks: true });
+      const pageData: any = ret.data;
+      const blocks = pageData.blocks || [];
+
+      for (const b of blocks) {
+        for (const p of b.paragraphs || []) {
+          for (const l of p.lines || []) {
+            const lText = l.text ? l.text.trim() : '';
+            if (lText) {
+              lines.push({ text: lText, bbox: l.bbox, confidence: l.confidence });
+            }
+            for (const wd of l.words || []) {
+              const wText = wd.text ? wd.text.trim() : '';
+              if (wText) {
+                words.push({ text: wText, bbox: wd.bbox, confidence: wd.confidence });
+              }
+            }
+          }
+        }
+      }
+    }
 
     onProgress?.(85, 'Mapeando coordenadas milimétricas para TrueEdit...');
 
@@ -126,101 +163,53 @@ class OcrServiceClass {
     const ratioPdfY = options.pdfHeight / imgH;
 
     const detectedItems: DetectedTextItem[] = [];
+    const targetItems = level === 'lines' ? lines : words;
 
-    if (level === 'lines' && pageData.lines && pageData.lines.length > 0) {
-      pageData.lines.forEach((line: any, idx: number) => {
-        const text = line.text?.trim();
-        if (!text) return;
+    targetItems.forEach((item, idx) => {
+      const text = item.text?.trim();
+      if (!text || text.length === 0) return;
 
-        const { x0, y0, x1, y1 } = line.bbox;
-        const boxW = Math.max(x1 - x0, 10);
-        const boxH = Math.max(y1 - y0, 8);
+      const { x0, y0, x1, y1 } = item.bbox;
+      const boxW = Math.max(x1 - x0, 8);
+      const boxH = Math.max(y1 - y0, 8);
 
-        const screenLeft = x0 * ratioScreenX;
-        const screenTop = y0 * ratioScreenY;
-        const screenWidth = boxW * ratioScreenX;
-        const screenHeight = boxH * ratioScreenY;
+      const screenLeft = x0 * ratioScreenX;
+      const screenTop = y0 * ratioScreenY;
+      const screenWidth = boxW * ratioScreenX;
+      const screenHeight = boxH * ratioScreenY;
 
-        const pdfX = x0 * ratioPdfX;
-        const pdfWidth = boxW * ratioPdfX;
-        const pdfHeight = boxH * ratioPdfY;
-        // PDF Y: inverter eixo (0 no rodapé)
-        const pdfY = options.pdfHeight - (y1 * ratioPdfY);
-        const fontSize = Math.max(8, Math.round(pdfHeight * 0.8));
+      const pdfX = x0 * ratioPdfX;
+      const pdfWidth = boxW * ratioPdfX;
+      const pdfHeight = boxH * ratioPdfY;
+      // PDF Y: origem no canto inferior esquerdo (0 no rodapé)
+      const pdfY = options.pdfHeight - (y1 * ratioPdfY);
+      const fontSize = Math.max(8, Math.round(pdfHeight * 0.8));
 
-        const sampledBgColor = this.sampleBackgroundColor(
-          options.pageCanvas || null,
-          screenLeft,
-          screenTop,
-          screenWidth,
-          screenHeight
-        );
+      const sampledBgColor = this.sampleBackgroundColor(
+        options.pageCanvas || null,
+        screenLeft,
+        screenTop,
+        screenWidth,
+        screenHeight
+      );
 
-        detectedItems.push({
-          id: `ocr-line-${pageNumber}-${idx}`,
-          str: text,
-          pdfX,
-          pdfY,
-          pdfWidth,
-          pdfHeight,
-          fontSize,
-          screenLeft,
-          screenTop,
-          screenWidth,
-          screenHeight,
-          isOcr: true,
-          confidence: line.confidence,
-          sampledBgColor
-        });
+      detectedItems.push({
+        id: `ocr-${level === 'lines' ? 'line' : 'word'}-${pageNumber}-${idx}`,
+        str: text,
+        pdfX,
+        pdfY,
+        pdfWidth,
+        pdfHeight,
+        fontSize,
+        screenLeft,
+        screenTop,
+        screenWidth,
+        screenHeight,
+        isOcr: true,
+        confidence: item.confidence,
+        sampledBgColor
       });
-    } else {
-      // Nível de palavras (words)
-      const words = pageData.words || [];
-      words.forEach((word: any, idx: number) => {
-        const text = word.text?.trim();
-        if (!text || text.length === 0) return;
-
-        const { x0, y0, x1, y1 } = word.bbox;
-        const boxW = Math.max(x1 - x0, 8);
-        const boxH = Math.max(y1 - y0, 8);
-
-        const screenLeft = x0 * ratioScreenX;
-        const screenTop = y0 * ratioScreenY;
-        const screenWidth = boxW * ratioScreenX;
-        const screenHeight = boxH * ratioScreenY;
-
-        const pdfX = x0 * ratioPdfX;
-        const pdfWidth = boxW * ratioPdfX;
-        const pdfHeight = boxH * ratioPdfY;
-        const pdfY = options.pdfHeight - (y1 * ratioPdfY);
-        const fontSize = Math.max(8, Math.round(pdfHeight * 0.8));
-
-        const sampledBgColor = this.sampleBackgroundColor(
-          options.pageCanvas || null,
-          screenLeft,
-          screenTop,
-          screenWidth,
-          screenHeight
-        );
-
-        detectedItems.push({
-          id: `ocr-word-${pageNumber}-${idx}`,
-          str: text,
-          pdfX,
-          pdfY,
-          pdfWidth,
-          pdfHeight,
-          fontSize,
-          screenLeft,
-          screenTop,
-          screenWidth,
-          screenHeight,
-          isOcr: true,
-          confidence: word.confidence,
-          sampledBgColor
-        });
-      });
-    }
+    });
 
     onProgress?.(100, `OCR concluído! ${detectedItems.length} blocos de texto prontos para TrueEdit.`);
     return detectedItems;

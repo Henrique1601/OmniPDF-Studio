@@ -87,16 +87,33 @@ export const DirectTextEditTool: React.FC<DirectTextEditToolProps> = ({
           scale
         );
 
-        // 2. Extract text items with coordinate mapping
-        const items = await PDFService.extractPageTextItems(
+        // 2. Extract text items with coordinate mapping (automatic OCR for scans/photos)
+        const { items, isScanned } = await PDFService.extractPageTextWithOcrFallback(
           currentFile.data,
           currentPage,
-          scale
+          scale,
+          {
+            lang: ocrLang,
+            level: ocrLevel,
+            pageCanvas: canvasRef.current,
+            onProgress: (p, s) => {
+              if (!isCancelled) {
+                setIsOcrRunning(true);
+                setOcrProgress(p);
+                setOcrStatus(s);
+              }
+            }
+          }
         );
 
         if (!isCancelled) {
           setDetectedTexts(items);
+          setIsScannedDoc(isScanned);
+          setIsOcrRunning(false);
           setLoading(false);
+          if (isScanned && items.length > 0) {
+            onShowMessage(`Foto/digitalização reconhecida: ${items.length} blocos de texto prontos para edição!`, 'success');
+          }
         }
       } catch (err: any) {
         console.error('Error loading page text:', err);

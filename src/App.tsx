@@ -41,13 +41,14 @@ import { ToolType, AppNavMode, PDFFileInfo, TaskHistoryItem } from './types';
 import { PDFService } from './services/pdfService';
 import { APP_VERSION } from './constants/version';
 import { ThemeService } from './services/themeService';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, UploadCloud } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [currentNav, setCurrentNav] = useState<AppNavMode>('tools');
   const [currentTool, setCurrentTool] = useState<ToolType | null>(null);
   const [currentFile, setCurrentFile] = useState<PDFFileInfo | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState<boolean>(false);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
       return localStorage.getItem('omnipdf_theme') === 'light' ? 'light' : 'dark';
@@ -358,50 +359,118 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Global Drag and Drop support for PDF files
+  // Global Drag and Drop support for PDF and Image files (PNG, JPG, JPEG, WEBP, BMP)
   useEffect(() => {
+    let dragCounter = 0;
+
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounter++;
+      if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
+        setIsDraggingOver(true);
+      }
+    };
+
     const handleDragOver = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+      }
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        setIsDraggingOver(false);
+        dragCounter = 0;
+      }
     };
 
     const handleDrop = async (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      dragCounter = 0;
+      setIsDraggingOver(false);
 
       const files = e.dataTransfer?.files;
-      if (files && files.length > 0) {
-        const file = files[0];
-        if (file.name.toLowerCase().endsWith('.pdf')) {
-          if (window.electronAPI && (file as any).path) {
-            loadPdfFromPath((file as any).path);
-          } else {
-            const data = await file.arrayBuffer();
-            const pageCount = await PDFService.getPageCount(data);
-            const fileInfo: PDFFileInfo = {
-              id: Math.random().toString(),
-              name: file.name,
-              size: file.size,
-              pageCount,
-              data,
-              lastOpened: Date.now()
-            };
-            setCurrentFile(fileInfo);
-            addToRecents(fileInfo);
-            setCurrentNav('tools');
-            showToast(`Documento "${file.name}" carregado!`, 'success');
+      if (!files || files.length === 0) return;
+
+      const file = files[0];
+      const fileName = file.name.toLowerCase();
+      const isPdf = fileName.endsWith('.pdf');
+      const isImage = /\.(png|jpe?g|webp|bmp|tiff?)$/i.test(fileName);
+
+      if (!isPdf && !isImage) {
+        showToast('Por favor, solte um arquivo PDF ou foto/digitalização (PNG, JPG, WEBP, BMP).', 'error');
+        return;
+      }
+
+      // Extract file path safely in Electron 33 via webUtils
+      let filePath = '';
+      if (window.electronAPI?.getPathForFile) {
+        try {
+          filePath = window.electronAPI.getPathForFile(file) || '';
+        } catch {
+          filePath = (file as any).path || '';
+        }
+      } else {
+        filePath = (file as any).path || '';
+      }
+
+      if (filePath && window.electronAPI) {
+        loadPdfFromPath(filePath);
+      } else {
+        try {
+          let data = await file.arrayBuffer();
+          let name = file.name;
+
+          if (isImage) {
+            showToast(`Convertendo foto "${file.name}" para alta definição...`, 'success');
+            const pdfBytes = await PDFService.convertImageToPdf(data, file.name);
+            data = pdfBytes.buffer as ArrayBuffer;
+            name = `${file.name.replace(/\.[^/.]+$/, '')}.pdf`;
           }
-        } else {
-          showToast('Por favor, solte um arquivo PDF válido.', 'error');
+
+          const pageCount = await PDFService.getPageCount(data);
+          const fileInfo: PDFFileInfo = {
+            id: Math.random().toString(),
+            name,
+            size: data.byteLength,
+            pageCount,
+            data,
+            lastOpened: Date.now()
+          };
+
+          setCurrentFile(fileInfo);
+          addToRecents(fileInfo);
+          setCurrentNav('tools');
+
+          if (isImage) {
+            setCurrentTool('trueedit');
+            showToast(`Foto "${file.name}" aberta no TrueEdit com OCR inteligente!`, 'success');
+          } else {
+            setCurrentTool('reader');
+            showToast(`Documento "${name}" aberto com sucesso!`, 'success');
+          }
+        } catch (err: any) {
+          showToast(`Erro ao abrir arquivo solto: ${err.message}`, 'error');
         }
       }
     };
 
+    window.addEventListener('dragenter', handleDragEnter);
     window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('dragleave', handleDragLeave);
     window.addEventListener('drop', handleDrop);
 
     return () => {
+      window.removeEventListener('dragenter', handleDragEnter);
       window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('dragleave', handleDragLeave);
       window.removeEventListener('drop', handleDrop);
     };
   }, []);
@@ -428,13 +497,24 @@ export const App: React.FC = () => {
         input.onchange = async (e: any) => {
           const file: File = e.target.files?.[0];
           if (!file) return;
-          const data = await file.arrayBuffer();
-          const pageCount = await PDFService.getPageCount(data);
 
+          let data = await file.arrayBuffer();
+          const ext = file.name.split('.').pop()?.toLowerCase();
+          const isImage = ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'webp' || ext === 'bmp';
+          let name = file.name;
+
+          if (isImage) {
+            showToast(`Convertendo foto "${file.name}" para alta definição...`, 'success');
+            const pdfBytes = await PDFService.convertImageToPdf(data, file.name);
+            data = pdfBytes.buffer as ArrayBuffer;
+            name = `${file.name.replace(/\.[^/.]+$/, '')}.pdf`;
+          }
+
+          const pageCount = await PDFService.getPageCount(data);
           const fileInfo: PDFFileInfo = {
             id: Math.random().toString(),
-            name: file.name,
-            size: file.size,
+            name,
+            size: data.byteLength,
             pageCount,
             data,
             lastOpened: Date.now()
@@ -442,8 +522,14 @@ export const App: React.FC = () => {
 
           setCurrentFile(fileInfo);
           addToRecents(fileInfo);
-          setCurrentTool('reader');
-          showToast(`Documento "${file.name}" aberto no Acrobat Studio!`, 'success');
+
+          if (isImage) {
+            setCurrentTool('trueedit');
+            showToast(`Foto "${file.name}" aberta no TrueEdit com OCR!`, 'success');
+          } else {
+            setCurrentTool('reader');
+            showToast(`Documento "${name}" aberto com sucesso!`, 'success');
+          }
         };
         input.click();
       }
@@ -870,7 +956,22 @@ export const App: React.FC = () => {
           updateData={updateInfo}
         />
 
-          {/* Toast Notification */}
+        {/* Full Window Drag & Drop Overlay */}
+        {isDraggingOver && (
+          <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-center p-8 pointer-events-none border-4 border-dashed border-brand-500 animate-in fade-in duration-150">
+            <div className="w-24 h-24 rounded-3xl bg-brand-500/20 border-2 border-brand-500/40 text-brand-400 flex items-center justify-center mb-6 shadow-2xl animate-bounce">
+              <UploadCloud className="w-12 h-12" />
+            </div>
+            <h2 className="text-2xl font-black text-white tracking-tight mb-2">
+              Solte seu arquivo para abrir instantaneamente
+            </h2>
+            <p className="text-sm text-slate-300 max-w-md text-center leading-relaxed">
+              Compatível com documentos <strong className="text-brand-400">PDF</strong> e fotos de documentos ou digitalizações (<strong className="text-amber-400">PNG, JPG, WEBP, BMP</strong>) com OCR e TrueEdit.
+            </p>
+          </div>
+        )}
+
+        {/* Toast Notification */}
           {toast && (
             <div
               className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl border text-xs font-medium transition-all transform animate-in fade-in slide-in-from-bottom-2 duration-200 ${

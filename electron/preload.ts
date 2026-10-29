@@ -1,6 +1,14 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  getPathForFile: (file: File) => {
+    try {
+      return webUtils?.getPathForFile ? webUtils.getPathForFile(file) : (file as any).path || '';
+    } catch {
+      return (file as any).path || '';
+    }
+  },
+  runOcr: (image: string | ArrayBuffer, lang?: string) => ipcRenderer.invoke('ocr:recognize', { image, lang }),
   openFileDialog: (options?: { multiple?: boolean; filters?: { name: string; extensions: string[] }[] }) =>
     ipcRenderer.invoke('dialog:openFile', options),
   openDirectoryDialog: () => 
