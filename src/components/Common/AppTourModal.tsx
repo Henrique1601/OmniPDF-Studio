@@ -65,7 +65,7 @@ const TOUR_STEPS: TourStep[] = [
     tips: [
       'Arraste e solte (Drag & Drop) qualquer PDF direto no aplicativo',
       'Atalho universal: pressione Ctrl + O para navegar pelos seus arquivos',
-      'Leitor com miniaturas de páginas, zoom personalizável e rotação instantânea'
+      'Acrobat Live Studio: insira textos livres, grife, carimbe marcas d\'água e assine diretamente sobre as páginas ao vivo'
     ]
   },
   {

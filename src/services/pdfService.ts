@@ -142,17 +142,33 @@ export class PDFService {
     const opacity = options.opacity !== undefined ? options.opacity : 0.3;
     const rotDeg = options.rotationDeg !== undefined ? options.rotationDeg : 45;
 
+    // Parse hex color to rgb
+    const hexColor = (options.colorHex || '#DC2626').replace('#', '');
+    const r = parseInt(hexColor.substring(0, 2), 16) / 255 || 0.8;
+    const g = parseInt(hexColor.substring(2, 4), 16) / 255 || 0.1;
+    const b = parseInt(hexColor.substring(4, 6), 16) / 255 || 0.2;
+    const textColor = rgb(r, g, b);
+
+    // Calculate rotation in radians for center anchoring
+    const rad = (rotDeg * Math.PI) / 180;
+    const cosTheta = Math.cos(rad);
+    const sinTheta = Math.sin(rad);
+
     for (const page of pages) {
       const { width, height } = page.getSize();
       const textWidth = font.widthOfTextAtSize(text, fontSize);
       const textHeight = font.heightAtSize(fontSize);
 
+      // Center-anchored rotation positioning
+      const originX = width / 2 - (textWidth / 2 * cosTheta - textHeight / 2 * sinTheta);
+      const originY = height / 2 - (textWidth / 2 * sinTheta + textHeight / 2 * cosTheta);
+
       page.drawText(text, {
-        x: width / 2 - textWidth / 2,
-        y: height / 2 - textHeight / 2,
+        x: originX,
+        y: originY,
         size: fontSize,
         font: font,
-        color: rgb(0.8, 0.1, 0.2),
+        color: textColor,
         opacity: opacity,
         rotate: degrees(rotDeg),
       });
@@ -215,6 +231,139 @@ export class PDFService {
   /**
    * Adiciona anotação de texto ou desenho a uma página do PDF
    */
+
+  /**
+   * Aplica modificações ao vivo (Adobe Acrobat Style):
+   * Textos livres, Marca-Texto, Tarjas pretas de censura, Assinaturas e Marcas d'água combinadas.
+   */
+  static async applyLiveModifications(
+    data: ArrayBuffer,
+    modifications: {
+      texts?: { pageNumber: number; text: string; x: number; y: number; size: number; colorHex: string }[];
+      highlights?: { pageNumber: number; x: number; y: number; width: number; height: number; colorHex: string; opacity?: number }[];
+      redactions?: { pageNumber: number; x: number; y: number; width: number; height: number }[];
+      signatures?: { pageNumber: number; dataUrl: string; x: number; y: number; width: number; height: number }[];
+      watermark?: { enabled: boolean; text: string; fontSize: number; opacity: number; colorHex: string; rotationDeg: number };
+    }
+  ): Promise<Uint8Array> {
+    const pdfDoc = await PDFDocument.load(data, { ignoreEncryption: true });
+    const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const pages = pdfDoc.getPages();
+
+    const hexToRgbHelper = (hex: string) => {
+      const clean = (hex || '#000000').replace('#', '');
+      const r = parseInt(clean.substring(0, 2), 16) / 255 || 0;
+      const g = parseInt(clean.substring(2, 4), 16) / 255 || 0;
+      const b = parseInt(clean.substring(4, 6), 16) / 255 || 0;
+      return rgb(r, g, b);
+    };
+
+    // 1. Apply Highlights (rectangles with opacity)
+    if (modifications.highlights) {
+      for (const h of modifications.highlights) {
+        const pageIndex = h.pageNumber - 1;
+        if (pageIndex >= 0 && pageIndex < pages.length) {
+          pages[pageIndex].drawRectangle({
+            x: h.x,
+            y: h.y,
+            width: h.width,
+            height: h.height,
+            color: hexToRgbHelper(h.colorHex),
+            opacity: h.opacity !== undefined ? h.opacity : 0.4,
+          });
+        }
+      }
+    }
+
+    // 2. Apply Redactions (solid black censorship boxes)
+    if (modifications.redactions) {
+      for (const r of modifications.redactions) {
+        const pageIndex = r.pageNumber - 1;
+        if (pageIndex >= 0 && pageIndex < pages.length) {
+          pages[pageIndex].drawRectangle({
+            x: r.x,
+            y: r.y,
+            width: r.width,
+            height: r.height,
+            color: rgb(0, 0, 0),
+            opacity: 1.0,
+          });
+        }
+      }
+    }
+
+    // 3. Apply Free Text Insertions
+    if (modifications.texts) {
+      for (const t of modifications.texts) {
+        const pageIndex = t.pageNumber - 1;
+        if (pageIndex >= 0 && pageIndex < pages.length && t.text.trim()) {
+          pages[pageIndex].drawText(t.text, {
+            x: t.x,
+            y: t.y,
+            size: t.size || 14,
+            font: fontRegular,
+            color: hexToRgbHelper(t.colorHex || '#000000'),
+          });
+        }
+      }
+    }
+
+    // 4. Apply Signatures (PNG images)
+    if (modifications.signatures) {
+      for (const s of modifications.signatures) {
+        const pageIndex = s.pageNumber - 1;
+        if (pageIndex >= 0 && pageIndex < pages.length && s.dataUrl) {
+          try {
+            const base64Data = s.dataUrl.replace(/^data:image\/\w+;base64,/, '');
+            const binaryStr = atob(base64Data);
+            const bytes = new Uint8Array(binaryStr.length);
+            for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+            const embedded = await pdfDoc.embedPng(bytes);
+            pages[pageIndex].drawImage(embedded, {
+              x: s.x,
+              y: s.y,
+              width: s.width,
+              height: s.height,
+            });
+          } catch (err) {
+            console.error('Erro ao embutir assinatura:', err);
+          }
+        }
+      }
+    }
+
+    // 5. Apply Watermark across all pages if enabled
+    if (modifications.watermark?.enabled && modifications.watermark.text.trim()) {
+      const wm = modifications.watermark;
+      const rad = (wm.rotationDeg * Math.PI) / 180;
+      const cosTheta = Math.cos(rad);
+      const sinTheta = Math.sin(rad);
+      const wmColor = hexToRgbHelper(wm.colorHex || '#DC2626');
+
+      for (const page of pages) {
+        const { width, height } = page.getSize();
+        const textWidth = fontBold.widthOfTextAtSize(wm.text, wm.fontSize);
+        const textHeight = fontBold.heightAtSize(wm.fontSize);
+
+        const originX = width / 2 - (textWidth / 2 * cosTheta - textHeight / 2 * sinTheta);
+        const originY = height / 2 - (textWidth / 2 * sinTheta + textHeight / 2 * cosTheta);
+
+        page.drawText(wm.text, {
+          x: originX,
+          y: originY,
+          size: wm.fontSize,
+          font: fontBold,
+          color: wmColor,
+          opacity: wm.opacity,
+          rotate: degrees(wm.rotationDeg),
+        });
+      }
+    }
+
+    return await pdfDoc.save({ useObjectStreams: true });
+  }
+
   static async addAnnotations(
     data: ArrayBuffer,
     annotations: {

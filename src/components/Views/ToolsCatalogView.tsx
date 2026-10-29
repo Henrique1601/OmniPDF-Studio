@@ -194,6 +194,15 @@ export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = ({ onSelectTool
       description: 'Edição in-place, assinaturas e anotações',
       tools: [
         {
+          id: 'reader',
+          title: 'Acrobat Live Studio',
+          desc: 'Edição interativa livre no documento (texto, marca-texto, carimbo e censura)',
+          icon: Sparkles,
+          bgGradient: 'from-brand-500/25 to-rose-500/25 border-brand-500/40',
+          iconColor: 'text-brand-400',
+          badge: 'ACROBAT'
+        },
+        {
           id: 'trueedit',
           title: 'Editar Texto (TrueEdit)',
           desc: 'Substituição direta do texto nas coordenadas reais',
@@ -221,7 +230,7 @@ export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = ({ onSelectTool
         {
           id: 'highlight',
           title: 'Marca-Texto',
-          desc: 'Destaques coloridos e anotações visuais',
+          desc: 'Marca-texto com seleção livre e visão completa da página',
           icon: Highlighter,
           bgGradient: 'from-yellow-500/20 to-amber-500/20 border-yellow-500/30',
           iconColor: 'text-yellow-400'
@@ -229,7 +238,7 @@ export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = ({ onSelectTool
         {
           id: 'watermark',
           title: 'Marca d\'Água',
-          desc: 'Carimbos de texto com ângulo e transparência',
+          desc: 'Carimbos com visualização no PDF real e ângulos corrigidos',
           icon: Droplet,
           bgGradient: 'from-blue-500/20 to-teal-500/20 border-blue-500/30',
           iconColor: 'text-blue-400'
@@ -251,7 +260,7 @@ export const ToolsCatalogView: React.FC<ToolsCatalogViewProps> = ({ onSelectTool
         {
           id: 'pdf-to-img',
           title: 'PDF para Imagem',
-          desc: 'Extrair páginas em PNG de alta definição',
+          desc: 'Extrair páginas individuais ou em lote completo (PNG/JPG)',
           icon: ImageIcon,
           bgGradient: 'from-amber-500/20 to-orange-500/20 border-amber-500/30',
           iconColor: 'text-amber-400'

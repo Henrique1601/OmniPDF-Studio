@@ -133,28 +133,56 @@ export const PreferencesView: React.FC<PreferencesViewProps> = ({ onShowMessage,
   };
 
   const handleCheckUpdate = async () => {
-    if (!window.electronAPI?.checkForUpdates) {
-      onShowMessage('Verificação disponível apenas no aplicativo desktop instalado.', 'error');
-      return;
-    }
-
     setIsCheckingUpdate(true);
     setUpdateStatus('Consultando as releases oficiais no GitHub...');
 
     try {
-      const res = await window.electronAPI.checkForUpdates();
-      if (res?.status === 'dev-mode') {
-        setUpdateStatus('Modo de desenvolvimento: atualizações ativas nos pacotes de produção.');
-        onShowMessage('Modo dev ativo. Para testar auto-update, execute o instalador instalado.', 'success');
-      } else if (res?.updateInfo) {
-        setUpdateStatus(`Nova versão ${res.updateInfo.version} disponível para download!`);
-        onShowMessage(`Nova versão ${res.updateInfo.version} encontrada!`, 'success');
+      let foundUpdate = false;
+      let remoteVersion = '';
+
+      if (window.electronAPI?.checkForUpdates) {
+        const res = await window.electronAPI.checkForUpdates();
+        if (res?.status === 'available' && res?.version) {
+          foundUpdate = true;
+          remoteVersion = res.version;
+        }
+      }
+
+      // Also verify via GitHub releases API directly
+      if (!foundUpdate) {
+        try {
+          const ghRes = await fetch('https://api.github.com/repos/Henrique1601/OmniPDF-Studio/releases/latest', {
+            headers: { 'Accept': 'application/vnd.github.v3+json' }
+          });
+          if (ghRes.ok) {
+            const data = await ghRes.json();
+            if (data?.tag_name) {
+              const remote = data.tag_name.replace(/^v/, '');
+              const rp = remote.split('.').map((n: string) => parseInt(n, 10) || 0);
+              const cp = APP_VERSION.split('.').map((n: string) => parseInt(n, 10) || 0);
+              for (let i = 0; i < Math.max(rp.length, cp.length); i++) {
+                if ((rp[i] || 0) > (cp[i] || 0)) {
+                  foundUpdate = true;
+                  remoteVersion = remote;
+                  break;
+                }
+                if ((rp[i] || 0) < (cp[i] || 0)) break;
+              }
+            }
+          }
+        } catch {}
+      }
+
+      if (foundUpdate) {
+        setUpdateStatus(`Nova versão v${remoteVersion} disponível para download no GitHub!`);
+        onShowMessage(`Nova versão v${remoteVersion} encontrada!`, 'success');
       } else {
-        setUpdateStatus('OmniPDF Studio já está na versão mais recente (v' + APP_VERSION + ').');
-        onShowMessage('Você está na versão mais recente!', 'success');
+        setUpdateStatus(`OmniPDF Studio já está na versão mais recente (v${APP_VERSION}).`);
+        onShowMessage(`Você já está na versão mais recente (v${APP_VERSION})!`, 'success');
       }
     } catch (err: any) {
       setUpdateStatus(`Erro ao verificar: ${err.message}`);
+      onShowMessage(`Erro na verificação: ${err.message}`, 'error');
     } finally {
       setIsCheckingUpdate(false);
     }

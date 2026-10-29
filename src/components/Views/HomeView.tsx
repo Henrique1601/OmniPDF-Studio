@@ -44,11 +44,18 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 Abrir Documento PDF
               </button>
               <button
+                onClick={() => onSelectTool('reader')}
+                className="px-5 py-3 bg-gradient-to-r from-brand-600/30 to-purple-600/30 hover:bg-brand-600/40 text-brand-200 border border-brand-500/40 font-semibold text-xs rounded-xl transition-all flex items-center gap-2 shadow-sm"
+              >
+                <Sparkles className="w-4 h-4 text-brand-400" />
+                Acrobat Live Studio
+              </button>
+              <button
                 onClick={() => onSelectTool('trueedit')}
-                className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs rounded-xl transition-all flex items-center gap-2"
+                className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs rounded-xl transition-all flex items-center gap-2"
               >
                 <Sparkles className="w-4 h-4 text-amber-400" />
-                Editar Texto (TrueEdit)
+                TrueEdit
               </button>
               {onStartTour && (
                 <button

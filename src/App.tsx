@@ -160,8 +160,8 @@ export const App: React.FC = () => {
 
       setCurrentFile(fileInfo);
       addToRecents(fileInfo);
-      setCurrentNav('tools');
-      showToast(`Documento "${name}" carregado!`, 'success');
+      setCurrentTool('reader');
+      showToast(`Documento "${name}" aberto no Acrobat Studio!`, 'success');
     } catch (err: any) {
       showToast(`Erro ao abrir documento: ${err.message}`, 'error');
     }
@@ -171,10 +171,11 @@ export const App: React.FC = () => {
     // Apply visual theme on boot
     ThemeService.applyTheme();
 
-    // Check auto update listener
+    // Check auto update listener from Electron
+    let unsubscribe: (() => void) | undefined;
     if (window.electronAPI?.onUpdaterStatus) {
-      const unsubscribe = window.electronAPI.onUpdaterStatus((data) => {
-        if (data.status === 'available') {
+      unsubscribe = window.electronAPI.onUpdaterStatus((data) => {
+        if (data.status === 'available' && data.version) {
           setHasUpdateAvailable(true);
           setUpdateInfo({
             version: data.version,
@@ -185,8 +186,50 @@ export const App: React.FC = () => {
           showToast(`Nova versão v${data.version} encontrada no GitHub!`, 'success');
         }
       });
-      return () => unsubscribe();
+
+      // Proactively trigger initial check after 2 seconds
+      setTimeout(() => {
+        window.electronAPI?.checkForUpdates?.().catch(() => {});
+      }, 2000);
     }
+
+    // Resilient direct GitHub Releases fallback check
+    const checkGitHubDirect = async () => {
+      try {
+        const res = await fetch('https://api.github.com/repos/Henrique1601/OmniPDF-Studio/releases/latest', {
+          headers: { 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.tag_name) {
+          const remote = data.tag_name.replace(/^v/, '');
+          const rp = remote.split('.').map((n: string) => parseInt(n, 10) || 0);
+          const cp = APP_VERSION.split('.').map((n: string) => parseInt(n, 10) || 0);
+          let newer = false;
+          for (let i = 0; i < Math.max(rp.length, cp.length); i++) {
+            if ((rp[i] || 0) > (cp[i] || 0)) { newer = true; break; }
+            if ((rp[i] || 0) < (cp[i] || 0)) { break; }
+          }
+          if (newer) {
+            setHasUpdateAvailable(true);
+            setUpdateInfo({
+              version: remote,
+              releaseDate: data.published_at,
+              releaseNotes: data.body,
+            });
+            setIsUpdateModalOpen(true);
+            showToast(`Nova versão v${remote} disponível para atualização!`, 'success');
+          }
+        }
+      } catch {}
+    };
+
+    const directTimer = setTimeout(checkGitHubDirect, 3000);
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+      clearTimeout(directTimer);
+    };
   }, []);
 
   // Listen to file associations and external file opening
@@ -377,7 +420,8 @@ export const App: React.FC = () => {
 
           setCurrentFile(fileInfo);
           addToRecents(fileInfo);
-          showToast(`Documento "${file.name}" carregado!`, 'success');
+          setCurrentTool('reader');
+          showToast(`Documento "${file.name}" aberto no Acrobat Studio!`, 'success');
         };
         input.click();
       }
@@ -415,7 +459,7 @@ export const App: React.FC = () => {
   };
 
   const toolLabels: Record<ToolType, string> = {
-    reader: 'Leitor e Visualizador de PDF',
+    reader: 'Visualizador & Editor ao Vivo (Acrobat Studio)',
     trueedit: 'Editar Texto do PDF (TrueEdit)',
     'ai-chat': 'Chat com PDF & IA (Gemini 2.5)',
     translate: 'Traduzir PDF (Layout Seguro)',
@@ -486,7 +530,16 @@ export const App: React.FC = () => {
           <Suspense fallback={<ToolLoadingFallback toolName={currentTool ? toolLabels[currentTool] : undefined} />}>
           {/* Active Dedicated Tool Modes */}
           {currentTool === 'reader' && (
-            <ReaderView file={currentFile} onOpenFile={handleOpenFile} />
+            <ReaderView
+              file={currentFile}
+              onOpenFile={handleOpenFile}
+              onShowMessage={showToast}
+              onFileUpdated={(newFile) => {
+                setCurrentFile(newFile);
+                addToRecents(newFile);
+                recordTask('Edição ao Vivo (Acrobat Studio)', newFile.name, 'success');
+              }}
+            />
           )}
 
           {currentTool === 'trueedit' && (
@@ -659,6 +712,11 @@ export const App: React.FC = () => {
               currentFile={currentFile}
               onOpenFile={handleOpenFile}
               onShowMessage={showToast}
+              onFileUpdated={(newFile) => {
+                setCurrentFile(newFile);
+                addToRecents(newFile);
+                recordTask('Marca d\'Água', newFile.name, 'success');
+              }}
             />
           )}
 

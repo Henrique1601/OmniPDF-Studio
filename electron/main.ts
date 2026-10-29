@@ -63,6 +63,82 @@ initialToolId = findToolInArgs(process.argv);
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
 
+
+// Version comparator helper (SemVer)
+function isNewerVersion(remote: string, current: string): boolean {
+  const rParts = remote.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+  const cParts = current.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(rParts.length, cParts.length); i++) {
+    const r = rParts[i] || 0;
+    const c = cParts[i] || 0;
+    if (r > c) return true;
+    if (r < c) return false;
+  }
+  return false;
+}
+
+// Resilient GitHub Releases API checker
+async function checkGitHubReleasesFallback(currentVer: string) {
+  try {
+    const res = await fetch('https://api.github.com/repos/Henrique1601/OmniPDF-Studio/releases/latest', {
+      headers: {
+        'User-Agent': 'OmniPDF-Studio-App',
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    if (!data || !data.tag_name) return null;
+    const remoteVer = data.tag_name.replace(/^v/, '');
+    if (isNewerVersion(remoteVer, currentVer)) {
+      const exeAsset = data.assets?.find((a: any) => typeof a.name === 'string' && a.name.endsWith('.exe'));
+      return {
+        status: 'available',
+        version: remoteVer,
+        releaseDate: data.published_at,
+        releaseNotes: data.body,
+        downloadUrl: exeAsset ? exeAsset.browser_download_url : data.html_url
+      };
+    } else {
+      return { status: 'not-available', version: currentVer };
+    }
+  } catch (err: any) {
+    return { status: 'error', error: err.message };
+  }
+}
+
+async function performUpdateCheck() {
+  const currentVer = app.getVersion();
+  try {
+    win?.webContents.send('updater:status', { status: 'checking' });
+  } catch {}
+
+  // 1. If packaged and not store, try electron-updater first
+  if (app.isPackaged && !process.windowsStore) {
+    try {
+      const result = await autoUpdater.checkForUpdates();
+      if (result?.updateInfo) {
+        return {
+          status: 'available',
+          version: result.updateInfo.version,
+          releaseDate: result.updateInfo.releaseDate,
+          releaseNotes: result.updateInfo.releaseNotes,
+          updateInfo: result.updateInfo
+        };
+      }
+    } catch (e: any) {
+      console.log('autoUpdater checkForUpdates error, using GitHub fallback:', e?.message);
+    }
+  }
+
+  // 2. Resilient GitHub API Fallback Check
+  const fallback = await checkGitHubReleasesFallback(currentVer);
+  if (fallback && win && !win.isDestroyed()) {
+    win.webContents.send('updater:status', fallback);
+  }
+  return fallback || { status: 'not-available', version: currentVer };
+}
+
 function setupAutoUpdater() {
   autoUpdater.on('checking-for-update', () => {
     win?.webContents.send('updater:status', { status: 'checking' });
@@ -96,6 +172,15 @@ function setupAutoUpdater() {
   autoUpdater.on('update-downloaded', (info) => {
     win?.webContents.send('updater:status', { status: 'downloaded', version: info.version });
   });
+  // Automatically trigger check 3.5 seconds after boot and recurring every 45 min
+  setTimeout(() => {
+    performUpdateCheck().catch(() => {});
+  }, 3500);
+
+  setInterval(() => {
+    performUpdateCheck().catch(() => {});
+  }, 45 * 60 * 1000);
+
 }
 
 
@@ -362,10 +447,7 @@ ipcMain.handle('app:getVersion', () => {
 // Updater handlers
 ipcMain.handle('updater:check', async () => {
   try {
-    if (!app.isPackaged || process.windowsStore) {
-      return { status: 'dev-mode', message: 'Verificação de update desativada' };
-    }
-    return await autoUpdater.checkForUpdates();
+    return await performUpdateCheck();
   } catch (err: any) {
     return { status: 'error', error: err.message };
   }
