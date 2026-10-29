@@ -1,15 +1,16 @@
 import { APP_VERSION } from '../../constants/version';
 import React, { useState, useEffect } from 'react';
-import { Settings, Key, Globe, Download, RefreshCw, CheckCircle2, Shield, Folder, HardDrive, Cpu, AlertCircle, Bot, Server, Loader2, Sparkles, Palette, Sun, Moon, Clock, Monitor, Check } from 'lucide-react';
+import { Settings, Key, Globe, Download, RefreshCw, CheckCircle2, Shield, Folder, HardDrive, Cpu, AlertCircle, Bot, Server, Loader2, Sparkles, Palette, Sun, Moon, Clock, Monitor, Check, Compass, Eye, Trash2, Sliders, FileText, Zap } from 'lucide-react';
 import { AppPreferences, AIProviderType, ThemeId } from '../../types';
 import { AIService } from '../../services/aiService';
 import { ThemeService, AVAILABLE_THEMES } from '../../services/themeService';
 
 interface PreferencesViewProps {
   onShowMessage: (msg: string, type?: 'success' | 'error') => void;
+  onStartTour?: () => void;
 }
 
-export const PreferencesView: React.FC<PreferencesViewProps> = ({ onShowMessage }) => {
+export const PreferencesView: React.FC<PreferencesViewProps> = ({ onShowMessage, onStartTour }) => {
   const [aiProvider, setAiProvider] = useState<AIProviderType>(() => (localStorage.getItem('omnipdf_ai_provider') as AIProviderType) || 'gemini');
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('omnipdf_gemini_api_key') || '');
   const [ollamaUrl, setOllamaUrl] = useState(() => localStorage.getItem('omnipdf_ollama_url') || 'http://localhost:11434');
@@ -28,6 +29,19 @@ export const PreferencesView: React.FC<PreferencesViewProps> = ({ onShowMessage 
   const [effectiveTheme, setEffectiveTheme] = useState<ThemeId>(() => ThemeService.getEffectiveTheme());
   const [scheduleDayStart, setScheduleDayStart] = useState(() => ThemeService.getScheduleSettings().dayStart);
   const [scheduleNightStart, setScheduleNightStart] = useState(() => ThemeService.getScheduleSettings().nightStart);
+  // Viewer & Reading settings
+  const [defaultZoom, setDefaultZoom] = useState(() => localStorage.getItem('omnipdf_default_zoom') || 'auto');
+  const [defaultThumbnails, setDefaultThumbnails] = useState(() => localStorage.getItem('omnipdf_default_thumbnails') !== 'false');
+  const [invertPdfColors, setInvertPdfColors] = useState(() => localStorage.getItem('omnipdf_invert_pdf_colors') === 'true');
+
+  // Export & Folder settings
+  const [defaultSaveDir, setDefaultSaveDir] = useState(() => localStorage.getItem('omnipdf_default_save_dir') || '');
+  const [saveSuffix, setSaveSuffix] = useState(() => localStorage.getItem('omnipdf_save_suffix') || '_editado');
+
+  // Privacy & History settings
+  const [recordHistory, setRecordHistory] = useState(() => localStorage.getItem('omnipdf_record_history') !== 'false');
+  const [reduceMotion, setReduceMotion] = useState(() => localStorage.getItem('omnipdf_reduce_motion') === 'true');
+
 
   useEffect(() => {
     if (window.electronAPI?.getAppVersion) {
@@ -81,6 +95,40 @@ export const PreferencesView: React.FC<PreferencesViewProps> = ({ onShowMessage 
       setAiTestResult({ success: false, message: err.message || 'Erro no teste.' });
     } finally {
       setIsTestingAi(false);
+    }
+  };
+
+
+  const handleSelectSaveDirectory = async () => {
+    try {
+      if (window.electronAPI?.openDirectoryDialog) {
+        const selectedDir = await window.electronAPI.openDirectoryDialog();
+        if (selectedDir) {
+          setDefaultSaveDir(selectedDir);
+          localStorage.setItem('omnipdf_default_save_dir', selectedDir);
+          onShowMessage(`Pasta padrão definida: ${selectedDir}`, 'success');
+        }
+      }
+    } catch (e: any) {
+      onShowMessage(`Erro ao selecionar pasta: ${e.message}`, 'error');
+    }
+  };
+
+  const handleClearRecentFiles = () => {
+    try {
+      localStorage.removeItem('omnipdf_recent_files');
+      onShowMessage('Histórico de documentos recentes limpo com sucesso!', 'success');
+    } catch (e: any) {
+      onShowMessage(`Erro ao limpar: ${e.message}`, 'error');
+    }
+  };
+
+  const handleClearTaskHistory = () => {
+    try {
+      localStorage.removeItem('omnipdf_task_history');
+      onShowMessage('Histórico de tarefas e logs limpo com sucesso!', 'success');
+    } catch (e: any) {
+      onShowMessage(`Erro ao limpar: ${e.message}`, 'error');
     }
   };
 
@@ -531,6 +579,183 @@ export const PreferencesView: React.FC<PreferencesViewProps> = ({ onShowMessage 
               <CheckCircle2 className="w-4 h-4 text-brand-400 shrink-0" />
               <span>{updateStatus}</span>
             </div>
+          )}
+        </div>
+
+
+        {/* Section 4: Visualizador & Leitura de PDF */}
+        <div className="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl p-6 space-y-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-500 flex items-center justify-center">
+              <Eye className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-[var(--text-primary)]">Visualizador & Leitura de Documentos</h2>
+              <p className="text-xs text-[var(--text-muted)]">Configure a experiência padrão ao abrir documentos PDF</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Zoom Padrão ao Abrir</label>
+              <select
+                value={defaultZoom}
+                onChange={(e) => setDefaultZoom(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--card-bg-subtle)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-brand-500"
+              >
+                <option value="auto">Automático (Ajustar à Tela)</option>
+                <option value="1.0">100% (Tamanho Real)</option>
+                <option value="1.25">125% (Confortável)</option>
+                <option value="1.5">150% (Grande)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Painel Lateral de Miniaturas</label>
+              <select
+                value={String(defaultThumbnails)}
+                onChange={(e) => setDefaultThumbnails(e.target.value === 'true')}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--card-bg-subtle)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-brand-500"
+              >
+                <option value="true">Sempre Aberto (Ver páginas laterais)</option>
+                <option value="false">Recolhido (Foco total no documento)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-[var(--border-color)]/60">
+            <div>
+              <span className="text-xs font-semibold text-[var(--text-primary)]">Modo Noturno nos Documentos</span>
+              <p className="text-[11px] text-[var(--text-muted)]">Inverte fundos brancos de páginas para tons escuros, descansando a visão à noite</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={invertPdfColors}
+              onChange={(e) => setInvertPdfColors(e.target.checked)}
+              className="w-4 h-4 accent-brand-500 rounded cursor-pointer"
+            />
+          </div>
+        </div>
+
+        {/* Section 5: Salvamento & Exportação de Arquivos */}
+        <div className="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl p-6 space-y-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center">
+              <Download className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-[var(--text-primary)]">Exportação & Pastas Padrão</h2>
+              <p className="text-xs text-[var(--text-muted)]">Controle onde seus PDFs salvos serão guardados no computador</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Pasta Padrão para Salvar</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={defaultSaveDir}
+                  onChange={(e) => setDefaultSaveDir(e.target.value)}
+                  placeholder="Padrão do Windows (Perguntar a cada arquivo)"
+                  className="flex-1 px-3.5 py-2 text-xs rounded-xl bg-[var(--card-bg-subtle)] border border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-brand-500 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={handleSelectSaveDirectory}
+                  className="px-4 py-2 bg-[var(--hover-bg)] hover:bg-[var(--border-color)] text-[var(--text-primary)] rounded-xl text-xs font-semibold border border-[var(--border-color)] flex items-center gap-2 transition-colors shrink-0"
+                >
+                  <Folder className="w-3.5 h-3.5 text-brand-500" />
+                  <span>Procurar Pasta</span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Sufixo Automático de Nomeação</label>
+              <select
+                value={saveSuffix}
+                onChange={(e) => setSaveSuffix(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--card-bg-subtle)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-brand-500"
+              >
+                <option value="_editado">_editado (Ex: Relatorio_editado.pdf)</option>
+                <option value="_otimizado">_otimizado (Ex: Relatorio_otimizado.pdf)</option>
+                <option value="_omnipdf">_omnipdf (Ex: Relatorio_omnipdf.pdf)</option>
+                <option value="">Nenhum (Manter nome original)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 6: Privacidade & Limpeza de Dados */}
+        <div className="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl p-6 space-y-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-[var(--text-primary)]">Privacidade & Armazenamento Local</h2>
+              <p className="text-xs text-[var(--text-muted)]">Seus dados residem 100% no seu computador</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <div>
+              <span className="text-xs font-semibold text-[var(--text-primary)]">Gravar Histórico de Tarefas Locais</span>
+              <p className="text-[11px] text-[var(--text-muted)]">Mantém um registro offline de operações (juntar, comprimir, etc.) para sua conferência</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={recordHistory}
+              onChange={(e) => setRecordHistory(e.target.checked)}
+              className="w-4 h-4 accent-brand-500 rounded cursor-pointer"
+            />
+          </div>
+
+          <div className="pt-3 border-t border-[var(--border-color)]/60 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleClearRecentFiles}
+              className="px-3.5 py-2 bg-[var(--hover-bg)] hover:bg-rose-500/15 hover:text-rose-600 text-[var(--text-secondary)] rounded-xl text-xs font-semibold border border-[var(--border-color)] flex items-center gap-1.5 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Limpar Arquivos Recentes</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleClearTaskHistory}
+              className="px-3.5 py-2 bg-[var(--hover-bg)] hover:bg-rose-500/15 hover:text-rose-600 text-[var(--text-secondary)] rounded-xl text-xs font-semibold border border-[var(--border-color)] flex items-center gap-1.5 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Limpar Histórico de Tarefas</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Section 7: Tour & Guia do Aplicativo */}
+        <div className="bg-gradient-to-r from-brand-500/10 via-rose-500/5 to-transparent border border-brand-500/25 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-brand-500/20 text-brand-500 flex items-center justify-center shrink-0">
+              <Compass className="w-6 h-6 animate-pulse" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-[var(--text-primary)]">Tour Guiado pelo Aplicativo</h3>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                Quer rever o tutorial passo a passo explicando como funcionam as ferramentas e atalhos?
+              </p>
+            </div>
+          </div>
+
+          {onStartTour && (
+            <button
+              type="button"
+              onClick={onStartTour}
+              className="px-4 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-md transition-all flex items-center gap-2 shrink-0 active:scale-95"
+            >
+              <Compass className="w-4 h-4" />
+              <span>Iniciar Tour Agora</span>
+            </button>
           )}
         </div>
 

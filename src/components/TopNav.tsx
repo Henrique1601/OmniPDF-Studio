@@ -1,5 +1,5 @@
 import React from 'react';
-import { FolderOpen, Save, X, FileText, Info, Plus, Home, Bell, Sparkles, Search } from 'lucide-react';
+import { FolderOpen, Save, X, FileText, Info, Plus, Home, Bell, Sparkles, Search, HelpCircle } from 'lucide-react';
 import { PDFFileInfo, AppNavMode, ToolType } from '../types';
 import { ThemeQuickSelector } from './Common/ThemeQuickSelector';
 
@@ -16,6 +16,7 @@ interface TopNavProps {
   hasUpdateAvailable?: boolean;
   onOpenPreferences: () => void;
   onOpenCommandPalette?: () => void;
+  onStartTour?: () => void;
 }
 
 export const TopNav: React.FC<TopNavProps> = ({
@@ -30,7 +31,8 @@ export const TopNav: React.FC<TopNavProps> = ({
   activeToolName,
   hasUpdateAvailable,
   onOpenPreferences,
-  onOpenCommandPalette
+  onOpenCommandPalette,
+  onStartTour
 }) => {
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -118,6 +120,18 @@ export const TopNav: React.FC<TopNavProps> = ({
       {/* Right: Actions, Theme Quick Selector, Update Notification & Save */}
       <div className="flex items-center gap-2.5">
         <ThemeQuickSelector onOpenPreferences={onOpenPreferences} />
+
+        {onStartTour && (
+          <button
+            type="button"
+            onClick={onStartTour}
+            title="Tour do Aplicativo e Guia Rápido"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-slate-300 hover:text-white bg-[#27272a]/60 hover:bg-[#27272a] border border-[#3f3f46]/50 text-xs font-medium transition-all"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-brand-400" />
+            <span className="hidden sm:inline text-[11px]">Tour</span>
+          </button>
+        )}
 
         {hasUpdateAvailable && (
           <button

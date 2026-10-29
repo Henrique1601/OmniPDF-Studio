@@ -1,6 +1,6 @@
 import { APP_VERSION } from '../../constants/version';
 import React from 'react';
-import { UploadCloud, FileText, ArrowRight, Sparkles, Shield, Cpu, Zap, FolderOpen } from 'lucide-react';
+import { UploadCloud, FileText, ArrowRight, Sparkles, Shield, Cpu, Zap, FolderOpen, Compass } from 'lucide-react';
 import { ToolType, PDFFileInfo } from '../../types';
 
 interface HomeViewProps {
@@ -8,13 +8,15 @@ interface HomeViewProps {
   onSelectTool: (tool: ToolType) => void;
   recentFiles: PDFFileInfo[];
   onOpenRecent: (file: PDFFileInfo) => void;
+  onStartTour?: () => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
   onOpenFile,
   onSelectTool,
   recentFiles,
-  onOpenRecent
+  onOpenRecent,
+  onStartTour
 }) => {
   return (
     <div className="flex-1 flex flex-col h-full bg-[#12141a] overflow-y-auto text-slate-100 p-8 select-none">
@@ -33,7 +35,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               Edição direta no documento (TrueEdit), OCR em imagens, auditoria jurídica de contratos, tradução preservando layout e mais de 20 ferramentas prontas para uso.
             </p>
 
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <button
                 onClick={onOpenFile}
                 className="px-6 py-3 bg-gradient-to-r from-brand-600 to-rose-600 hover:from-brand-700 hover:to-rose-700 text-white font-semibold text-xs rounded-xl shadow-lg shadow-brand-500/25 transition-all flex items-center gap-2"
@@ -48,6 +50,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <Sparkles className="w-4 h-4 text-amber-400" />
                 Editar Texto (TrueEdit)
               </button>
+              {onStartTour && (
+                <button
+                  type="button"
+                  onClick={onStartTour}
+                  className="px-4 py-3 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/30 hover:border-brand-500/50 font-semibold text-xs rounded-xl transition-all flex items-center gap-2 shadow-sm"
+                  title="Fazer um tour guiado pelo aplicativo"
+                >
+                  <Compass className="w-4 h-4 text-brand-400" />
+                  Iniciar Tour do App
+                </button>
+              )}
             </div>
           </div>
         </div>

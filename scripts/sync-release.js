@@ -58,4 +58,4 @@ if (hasErrors) {
 console.log('\n✨ TODAS AS VERSÕES LOCAIS ESTÃO 100% SINCRONIZADAS!');
 console.log(`👉 Versão confirmada: v${pkgVersion}`);
 console.log('👉 Para realizar deploy da landing page na Vercel:');
-console.log('   cd landing && npx vercel --prod --yes');
+console.log('   cd landing && npx vercel --prod --yes --scope henrique1601s-projects');

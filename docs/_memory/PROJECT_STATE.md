@@ -1,8 +1,8 @@
 # ESTADO PERSISTENTE DO PROJETO & HISTÓRICO DE ARQUITETURA
 **OmniPDF Studio — Memória Contínua (Memory Architect Ledger)**
 
-> **Última Atualização:** 28/10/2026  
-> **Versão Corrente:** `v1.2.1`  
+> **Última Atualização:** 29/10/2026  
+> **Versão Corrente:** `v1.3.0`  
 > **Repositório GitHub:** `https://github.com/Henrique1601/OmniPDF-Studio`  
 > **Landing Page Oficial (Vercel):** `https://landing-topaz-ten-44.vercel.app` (Projeto: `prj_TNw1ze69DnSnfWrqqxJ62WrWhBY2`, Usuário: `henrique1601`)
 
@@ -18,6 +18,7 @@
 | **v1.1.2** | 28/10/2026 | Refatoração de Alto Contraste para Temas Claros/Brancos (WCAG AAA); Unificação da versão em `src/constants/version.ts`; Sincronização automatizada da Landing Page na Vercel; Criação de regras de governança contínua (`.geminirules`, `.cursorrules`, `docs/_rules/`). |
 | **v1.2.0** | 28/10/2026 | Command Palette Universal (`Ctrl + K`) & Atalhos Globais de Teclado; Code Splitting & Lazy Loading (`React.lazy` + `Suspense`); Global Error Boundary no React; Taskbar JumpList do Windows e Barra de Progresso Nativa. |
 | **v1.2.1** | 28/10/2026 | **Diferenciação Visual Marcante dos 3 Temas Claros**: Branco Puro (#ffffff), Claro Suave / Prata (#e2e8f0) e Papel Nobre / Marfim (#f5efe6); **Correção Crítica dos Atalhos & Comandos**: Inserção ativa do listener global de teclado (`Ctrl+K`, `Ctrl+O`, `Ctrl+S`, `Ctrl+W`, `Ctrl+,`, `Ctrl+H`), listener direto de `onKeyDown` no input do Command Palette, busca sem acento (*fuzzy normalizer*) e mapeamento de todas as 23 ferramentas. |
+| **v1.3.0** | 29/10/2026 | **Tour Guiado & Onboarding Interativo para Iniciantes** (Modal visual em 6 passos amigáveis, navegação por teclado e persistência local); **Novas Configurações Expandidas** (Preferências reais de Visualização/Zoom, Painel lateral de miniaturas, Modo Leitura Noturna, Pastas e Sufixos de Exportação configuráveis, Limpeza de Dados/Privacidade e gatilho do Tour); Pontos de acesso no TopNav (ícone HelpCircle), HomeView (botão Hero) e primeiro acesso automático. |
 
 ---
 
@@ -29,3 +30,4 @@
 - **ADR-004 (Performance via Code Splitting):** O bundle inicial carrega apenas os componentes de casca (`Sidebar`, `TopNav`, `HomeView`), enquanto ferramentas pesadas (OCR/Tesseract, DirectEdit/PDF-Lib, AI Tools) são fragmentadas em chunks assíncronos (`React.lazy`).
 - **ADR-005 (Integração Nativa Windows):** Uso de APIs nativas do Electron (`win.setProgressBar` e `app.setJumpList`) para transformar o OmniPDF Studio em um aplicativo desktop de primeira classe no Windows 10/11.
 - **ADR-006 (Especificidade Igualitária dos Temas Claros):** Cada tema claro (`light-pure`, `light-slate`, `light-warm`) utiliza a regra de especificidade `html[data-theme="..."]`, eliminando sobrescrita indevida por classes genéricas e garantindo que o fundo prateado e o pergaminho marfim sejam 100% distintos do branco puro.
+- **ADR-007 (Onboarding Amigável & Acessibilidade para Leigos):** Introdução de um componente visual e interativo de boas-vindas (`AppTourModal`) com dicas práticas e linguagem acessível, garantindo que novos usuários aproveitem as ferramentas sem curva de aprendizado.

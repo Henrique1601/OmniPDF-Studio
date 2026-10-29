@@ -8,6 +8,7 @@ import { RecentsView } from './components/Views/RecentsView';
 import { TaskHistoryView } from './components/Views/TaskHistoryView';
 import { PreferencesView } from './components/Views/PreferencesView';
 import { UpdateModal } from './components/Common/UpdateModal';
+import { AppTourModal } from './components/Common/AppTourModal';
 import { CommandPaletteModal } from './components/Common/CommandPaletteModal';
 import { ToolLoadingFallback } from './components/Common/ToolLoadingFallback';
 import { GlobalErrorBoundary } from './components/Common/GlobalErrorBoundary';
@@ -35,12 +36,6 @@ const UnlockTool = lazy(() => import('./components/Tools/UnlockTool').then(m => 
 const TranslatorTool = lazy(() => import('./components/Tools/TranslatorTool').then(m => ({ default: m.TranslatorTool })));
 const ContractAuditTool = lazy(() => import('./components/Tools/ContractAuditTool').then(m => ({ default: m.ContractAuditTool })));
 const FolderRagTool = lazy(() => import('./components/Tools/FolderRagTool').then(m => ({ default: m.FolderRagTool })));
-import { ToolsCatalogView } from './components/Views/ToolsCatalogView';
-import { HomeView } from './components/Views/HomeView';
-import { RecentsView } from './components/Views/RecentsView';
-import { TaskHistoryView } from './components/Views/TaskHistoryView';
-import { PreferencesView } from './components/Views/PreferencesView';
-import { UpdateModal } from './components/Common/UpdateModal';
 
 import { ToolType, AppNavMode, PDFFileInfo, TaskHistoryItem } from './types';
 import { PDFService } from './services/pdfService';
@@ -86,6 +81,7 @@ export const App: React.FC = () => {
 
   const [hasUpdateAvailable, setHasUpdateAvailable] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isTourOpen, setIsTourOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<{ version?: string; releaseDate?: string; releaseNotes?: string } | null>(null);
   const [recentFiles, setRecentFiles] = useState<PDFFileInfo[]>([]);
@@ -129,6 +125,21 @@ export const App: React.FC = () => {
       return [file, ...filtered].slice(0, 20);
     });
   };
+
+  // Auto-launch guided tour on first access
+  useEffect(() => {
+    try {
+      const tourSeen = localStorage.getItem('omnipdf_tour_seen');
+      if (tourSeen !== 'true') {
+        const timer = setTimeout(() => {
+          setIsTourOpen(true);
+        }, 600);
+        return () => clearTimeout(timer);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const loadPdfFromPath = async (filePath: string) => {
     try {
@@ -466,6 +477,7 @@ export const App: React.FC = () => {
             setCurrentNav('preferences');
           }}
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+          onStartTour={() => setIsTourOpen(true)}
         />
 
         {/* Viewport: Either Active Tool or Hub Nav View */}
@@ -684,6 +696,7 @@ export const App: React.FC = () => {
               onOpenFile={handleOpenFile}
               onSelectTool={handleSelectTool}
               recentFiles={recentFiles}
+              onStartTour={() => setIsTourOpen(true)}
               onOpenRecent={(f) => {
                 setCurrentFile(f);
                 setCurrentTool('reader');
@@ -724,7 +737,7 @@ export const App: React.FC = () => {
           )}
 
           {!currentTool && currentNav === 'preferences' && (
-            <PreferencesView onShowMessage={showToast} />
+            <PreferencesView onShowMessage={showToast} onStartTour={() => setIsTourOpen(true)} />
           )}
 
           </Suspense>
@@ -753,6 +766,20 @@ export const App: React.FC = () => {
             const next = current.startsWith('dark') ? 'light-pure' : 'dark-slate';
             ThemeService.setSelectedTheme(next);
             showToast(`Tema alterado para: ${next}`, 'success');
+          }}
+        />
+
+        {/* Interactive App Tour Modal */}
+        <AppTourModal
+          isOpen={isTourOpen}
+          onClose={() => setIsTourOpen(false)}
+          onNavigateNav={(nav) => {
+            setCurrentTool(null);
+            setCurrentNav(nav);
+          }}
+          onOpenPreferences={() => {
+            setCurrentTool(null);
+            setCurrentNav('preferences');
           }}
         />
 

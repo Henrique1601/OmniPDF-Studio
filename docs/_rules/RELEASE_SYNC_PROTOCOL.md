@@ -16,7 +16,7 @@ Toda nova release do OmniPDF Studio **DEVE** atualizar simultaneamente os seguin
 | **1** | `package.json` | Campo `"version": "X.Y.Z"` | Versão do manifesto do Node.js e Electron |
 | **2** | `src/constants/version.ts` | Constante `APP_VERSION = 'X.Y.Z'` | Fonte da verdade única para componentes UI (`Sidebar`, `HomeView`, `PreferencesView`) |
 | **3** | `landing/index.html` | Textos visíveis (`vX.Y.Z`) e links diretos para `OmniPDF.Studio.Setup.X.Y.Z.exe` | Vitrine pública e download para os usuários |
-| **4** | **Landing Page na Vercel** | Execução de `npx vercel --prod --yes` na pasta `landing/` | Publicação imediata no domínio oficial `https://landing-topaz-ten-44.vercel.app` |
+| **4** | **Landing Page na Vercel** | Execução de `npx vercel --prod --yes --scope henrique1601s-projects` na pasta `landing/` | Publicação imediata no domínio oficial `https://landing-topaz-ten-44.vercel.app` |
 | **5** | **Git Tag & Release** | `git tag vX.Y.Z && git push origin vX.Y.Z` | Disparo automático do GitHub Actions para compilação do instalador `.exe` e upload nos Releases |
 
 ---
@@ -34,7 +34,7 @@ Antes de fazer o push de uma nova versão:
 3. **Deploy da Landing Page na Vercel:**
    ```powershell
    cd landing
-   npx vercel --prod --yes
+   npx vercel --prod --yes --scope henrique1601s-projects
    cd ..
    ```
    *Verificar se `https://landing-topaz-ten-44.vercel.app` já exibe a nova versão.*
