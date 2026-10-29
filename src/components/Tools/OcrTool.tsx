@@ -51,15 +51,10 @@ export const OcrTool: React.FC<OcrToolProps> = ({ currentFile, onOpenFile, onSho
       setProgress(25); window.electronAPI?.setProgressBar?.(0.25);
       setStatusText(`Inicializando motor OCR (${lang.toUpperCase()})...`);
 
-      if (window.electronAPI?.runOcr) {
-        const ocrRes = await window.electronAPI.runOcr(pageDataUrl, lang);
-        setOcrText(ocrRes.text || '');
-      } else {
-        const worker = await createWorker(lang);
-        const ret = await worker.recognize(pageDataUrl, {}, { blocks: true });
-        setOcrText(ret.data.text || '');
-        await worker.terminate();
-      }
+      const worker = await createWorker(lang);
+      const ret = await worker.recognize(pageDataUrl, {}, { blocks: true });
+      setOcrText(ret.data.text || '');
+      await worker.terminate();
 
       setProgress(100); window.electronAPI?.setProgressBar?.(-1);
       setStatusText('Concluído!');

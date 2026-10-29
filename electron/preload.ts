@@ -8,7 +8,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return (file as any).path || '';
     }
   },
-  runOcr: (image: string | ArrayBuffer, lang?: string) => ipcRenderer.invoke('ocr:recognize', { image, lang }),
   openFileDialog: (options?: { multiple?: boolean; filters?: { name: string; extensions: string[] }[] }) =>
     ipcRenderer.invoke('dialog:openFile', options),
   openDirectoryDialog: () => 

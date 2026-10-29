@@ -109,38 +109,28 @@ class OcrServiceClass {
     const level = options.level || 'words';
     const onProgress = options.onProgress;
 
-    let lines: ParsedOcrItem[] = [];
-    let words: ParsedOcrItem[] = [];
+    const lines: ParsedOcrItem[] = [];
+    const words: ParsedOcrItem[] = [];
 
-    // Prioridade 1: Execução nativa no processo Electron via IPC (Ultra-rápido, sem limites de CSP ou Web Workers)
-    if (window.electronAPI?.runOcr) {
-      onProgress?.(25, `Executando OCR nativo de alta precisão (${lang.toUpperCase()})...`);
-      const srcString = typeof imageSource === 'string' ? imageSource : imageSource.toDataURL('image/png');
-      const ocrResult = await window.electronAPI.runOcr(srcString, lang);
-      lines = ocrResult.lines || [];
-      words = ocrResult.words || [];
-    } else {
-      // Prioridade 2: Fallback Web Worker do navegador (Tesseract.js v7)
-      onProgress?.(20, 'Preparando imagem de alta definição para OCR no navegador...');
-      const worker = await this.getWorker(lang, onProgress);
+    onProgress?.(20, 'Inicializando motor OCR para processamento inteligente...');
+    const worker = await this.getWorker(lang, onProgress);
 
-      onProgress?.(40, 'Analisando layout e reconhecendo texto na foto/digitalização...');
-      const ret = await worker.recognize(imageSource, {}, { blocks: true });
-      const pageData: any = ret.data;
-      const blocks = pageData.blocks || [];
+    onProgress?.(45, 'Analisando layout, linhas e palavras da imagem/digitalização...');
+    const ret = await worker.recognize(imageSource, {}, { blocks: true });
+    const pageData: any = ret.data;
+    const blocks = pageData.blocks || [];
 
-      for (const b of blocks) {
-        for (const p of b.paragraphs || []) {
-          for (const l of p.lines || []) {
-            const lText = l.text ? l.text.trim() : '';
-            if (lText) {
-              lines.push({ text: lText, bbox: l.bbox, confidence: l.confidence });
-            }
-            for (const wd of l.words || []) {
-              const wText = wd.text ? wd.text.trim() : '';
-              if (wText) {
-                words.push({ text: wText, bbox: wd.bbox, confidence: wd.confidence });
-              }
+    for (const b of blocks) {
+      for (const p of b.paragraphs || []) {
+        for (const l of p.lines || []) {
+          const lText = l.text ? l.text.trim() : '';
+          if (lText) {
+            lines.push({ text: lText, bbox: l.bbox, confidence: l.confidence });
+          }
+          for (const wd of l.words || []) {
+            const wText = wd.text ? wd.text.trim() : '';
+            if (wText) {
+              words.push({ text: wText, bbox: wd.bbox, confidence: wd.confidence });
             }
           }
         }

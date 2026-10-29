@@ -2,7 +2,6 @@ import { app, BrowserWindow, ipcMain, dialog, shell, session } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { autoUpdater } from 'electron-updater';
-import { createWorker, Worker } from 'tesseract.js';
 
 process.env.DIST = path.join(__dirname, '../dist');
 process.env.VITE_PUBLIC = app.isPackaged
@@ -445,71 +444,6 @@ ipcMain.handle('app:getVersion', () => {
   return app.getVersion();
 });
 
-// Native High-Performance OCR Engine (Node.js thread, zero CSP restrictions)
-let ocrWorker: Worker | null = null;
-let ocrCurrentLang: string = '';
-
-async function getOcrWorker(lang: string = 'por'): Promise<Worker> {
-  if (ocrWorker && ocrCurrentLang === lang) {
-    return ocrWorker;
-  }
-  if (ocrWorker) {
-    try {
-      await ocrWorker.terminate();
-    } catch {}
-    ocrWorker = null;
-  }
-  ocrWorker = await createWorker(lang);
-  ocrCurrentLang = lang;
-  return ocrWorker;
-}
-
-ipcMain.handle('ocr:recognize', async (_, { image, lang }: { image: string | ArrayBuffer; lang?: string }) => {
-  try {
-    const targetLang = lang || 'por';
-    const worker = await getOcrWorker(targetLang);
-    let imgSource: Buffer | string;
-    if (typeof image === 'string') {
-      imgSource = image;
-    } else {
-      imgSource = Buffer.from(image);
-    }
-
-    const ret = await worker.recognize(imgSource, {}, { blocks: true });
-    const pageData: any = ret.data;
-    const blocks = pageData.blocks || [];
-    const lines: Array<{ text: string; bbox: { x0: number; y0: number; x1: number; y1: number }; confidence: number }> = [];
-    const words: Array<{ text: string; bbox: { x0: number; y0: number; x1: number; y1: number }; confidence: number }> = [];
-
-    for (const b of blocks) {
-      for (const p of b.paragraphs || []) {
-        for (const l of p.lines || []) {
-          const lText = l.text ? l.text.trim() : '';
-          if (lText) {
-            lines.push({ text: lText, bbox: l.bbox, confidence: l.confidence });
-          }
-          for (const wd of l.words || []) {
-            const wText = wd.text ? wd.text.trim() : '';
-            if (wText) {
-              words.push({ text: wText, bbox: wd.bbox, confidence: wd.confidence });
-            }
-          }
-        }
-      }
-    }
-
-    return {
-      text: pageData.text || '',
-      lines,
-      words,
-      blocks
-    };
-  } catch (err: any) {
-    console.error('OCR Error in main process:', err);
-    throw new Error(`Falha no OCR: ${err.message}`);
-  }
-});
-
 // Updater handlers
 ipcMain.handle('updater:check', async () => {
   try {
@@ -558,15 +492,6 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
-  }
-});
-
-app.on('will-quit', async () => {
-  if (ocrWorker) {
-    try {
-      await ocrWorker.terminate();
-    } catch {}
-    ocrWorker = null;
   }
 });
 

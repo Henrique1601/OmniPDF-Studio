@@ -137,12 +137,6 @@ export interface ElectronAPI {
   onOpenToolExternal?: (callback: (toolId: string) => void) => () => void;
   setProgressBar?: (progress: number) => void;
   getPathForFile?: (file: File) => string;
-  runOcr?: (image: string | ArrayBuffer, lang?: string) => Promise<{
-    text: string;
-    lines: { text: string; bbox: { x0: number; y0: number; x1: number; y1: number }; confidence: number }[];
-    words: { text: string; bbox: { x0: number; y0: number; x1: number; y1: number }; confidence: number }[];
-    blocks: any[];
-  }>;
 
   // Auto-updater
   checkForUpdates: () => Promise<any>;
