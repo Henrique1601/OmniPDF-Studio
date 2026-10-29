@@ -23,7 +23,7 @@ import {
   Move,
   CornerUpLeft
 } from 'lucide-react';
-import { PDFFileInfo } from '../types';
+import { PDFFileInfo, DetectedTextItem } from '../types';
 import { PDFService } from '../services/pdfService';
 
 interface ReaderViewProps {
@@ -84,6 +84,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   // Navigation & View state
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [detectedTexts, setDetectedTexts] = useState<DetectedTextItem[]>([]);
   const [scale, setScale] = useState<number>(1.05);
   const [rotation, setRotation] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
@@ -164,7 +165,11 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       scale,
       rotation
     )
-      .then(() => {
+      .then(async () => {
+        try {
+          const texts = await PDFService.extractPageTextItems(file.data, currentPage, scale);
+          if (!isCancelled) setDetectedTexts(texts);
+        } catch {}
         if (!isCancelled) setLoading(false);
       })
       .catch((err) => {
@@ -208,6 +213,20 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   // Interactive Overlay Click / Drag handlers
   const handleOverlayMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!overlayRef.current || activeTool === 'pan') return;
+
+    // GUARD: Never create a new text item if clicking inside an existing item, button or input
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('.text-item-box') ||
+      target.closest('.signature-item-box') ||
+      target.closest('button') ||
+      target.tagName === 'BUTTON' ||
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA'
+    ) {
+      return;
+    }
+
     const rect = overlayRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -299,6 +318,36 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     setIsMouseDragging(false);
     setDragStart(null);
     setDragCurrent(null);
+  };
+
+
+  // Smart Snap-to-Text Click Handlers
+  const handleSmartTextClick = (item: DetectedTextItem) => {
+    if (activeTool === 'highlight') {
+      const newHighlight: LiveHighlightItem = {
+        id: Math.random().toString(),
+        pageNumber: currentPage,
+        screenX: item.screenLeft,
+        screenY: item.screenTop,
+        screenWidth: item.screenWidth,
+        screenHeight: item.screenHeight,
+        colorHex: selectedHighlightColor,
+        opacity: 0.42,
+      };
+      setHighlightItems((prev) => [...prev, newHighlight]);
+      onShowMessage?.(`Texto "${item.str}" grifado!`, 'success');
+    } else if (activeTool === 'redact') {
+      const newRedaction: LiveRedactionItem = {
+        id: Math.random().toString(),
+        pageNumber: currentPage,
+        screenX: item.screenLeft,
+        screenY: item.screenTop,
+        screenWidth: item.screenWidth,
+        screenHeight: item.screenHeight,
+      };
+      setRedactionItems((prev) => [...prev, newRedaction]);
+      onShowMessage?.(`Texto "${item.str}" censurado!`, 'success');
+    }
   };
 
   // Undo Last Modification
@@ -678,13 +727,13 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                   />
                 ))}
               </div>
-              <span className="text-[10px] text-slate-400 ml-2">Arraste o mouse sobre o texto</span>
+              <span className="text-[10px] text-amber-300 ml-2 font-medium">Modo Híbrido: Clique na palavra para detectar ou arraste livremente</span>
             </div>
           )}
 
           {activeTool === 'redact' && (
             <span className="text-[11px] text-rose-300 font-medium">
-              Modo Censura: arraste o mouse sobre o texto para aplicar tarja preta sólida permanente.
+              Modo Censura Híbrido: Clique na palavra para censurar ou arraste para cobrir área livre.
             </span>
           )}
 
@@ -908,6 +957,31 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                   : 'cursor-default'
               }`}
             >
+                            {/* Smart Detected Texts (Hover & Click to Highlight or Redact) */}
+              {(activeTool === 'highlight' || activeTool === 'redact') &&
+                detectedTexts.map((item) => (
+                  <div
+                    key={item.id}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSmartTextClick(item);
+                    }}
+                    title={activeTool === 'highlight' ? `Clique para grifar: "${item.str}"` : `Clique para censurar: "${item.str}"`}
+                    style={{
+                      left: `${item.screenLeft}px`,
+                      top: `${item.screenTop}px`,
+                      width: `${item.screenWidth}px`,
+                      height: `${item.screenHeight}px`,
+                    }}
+                    className={`absolute cursor-pointer transition-all z-10 ${
+                      activeTool === 'highlight'
+                        ? 'hover:bg-amber-300/35 hover:ring-1 hover:ring-amber-500'
+                        : 'hover:bg-neutral-900/60 hover:ring-1 hover:ring-neutral-900'
+                    }`}
+                  />
+                ))}
+
               {/* Highlights on this page */}
               {highlightItems
                 .filter((h) => h.pageNumber === currentPage)
@@ -970,15 +1044,19 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                 .map((t) => (
                   <div
                     key={t.id}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
                     style={{
                       left: `${t.screenX}px`,
                       top: `${t.screenY}px`,
                     }}
-                    className="absolute group z-20 flex items-center gap-1 bg-white/90 border border-slate-400/80 rounded px-1 shadow-sm"
+                    className="text-item-box absolute group z-30 flex items-center gap-1 bg-white border border-slate-400/90 rounded-lg px-2 py-0.5 shadow-md"
                   >
                     <input
                       type="text"
                       value={t.text}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
                       onChange={(e) => {
                         const val = e.target.value;
                         setTextItems((prev) => prev.map((item) => (item.id === t.id ? { ...item, text: val } : item)));
@@ -987,7 +1065,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                         fontSize: `${t.size}px`,
                         color: t.colorHex,
                       }}
-                      className="bg-transparent focus:outline-none font-sans font-medium"
+                      className="bg-transparent focus:outline-none font-sans font-medium min-w-[60px]"
                     />
                     <div
                       onMouseDown={(e) => {
@@ -999,19 +1077,21 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                         }
                       }}
                       title="Arrastar texto"
-                      className="cursor-move p-0.5 text-slate-400 hover:text-slate-700"
+                      className="cursor-move p-0.5 text-slate-400 hover:text-slate-700 rounded"
                     >
                       <Move className="w-3 h-3" />
                     </div>
                     <button
+                      type="button"
+                      onMouseDown={(e) => e.stopPropagation()}
                       onClick={(e) => {
                         e.stopPropagation();
                         setTextItems((prev) => prev.filter((item) => item.id !== t.id));
                       }}
                       title="Excluir texto"
-                      className="p-0.5 text-slate-400 hover:text-rose-600"
+                      className="p-0.5 text-slate-400 hover:text-rose-600 rounded transition-colors"
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
@@ -1028,7 +1108,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                       width: `${s.screenWidth}px`,
                       height: `${s.screenHeight}px`,
                     }}
-                    className="absolute border border-dashed border-indigo-500/80 rounded group cursor-move bg-white/40"
+                    className="signature-item-box absolute border border-dashed border-indigo-500/80 rounded group cursor-move bg-white/40"
                     onMouseDown={(e) => {
                       e.stopPropagation();
                       setMovingItemId(s.id);

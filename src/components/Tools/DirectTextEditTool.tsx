@@ -234,7 +234,7 @@ export const DirectTextEditTool: React.FC<DirectTextEditToolProps> = ({
         </div>
         <h3 className="text-xl font-bold text-white mb-2">Edição Direta de Texto do PDF (TrueEdit)</h3>
         <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
-          Abra qualquer documento PDF, clique diretamente no texto existente que deseja alterar, edite o conteúdo em tempo real e salve o PDF atualizado.
+          Edição direta in-place: clique em qualquer texto para abrir a caixa de edição ao vivo sobre a página, digite o novo texto e veja a alteração em tempo real.
         </p>
         <button
           onClick={onOpenFile}
@@ -341,39 +341,107 @@ export const DirectTextEditTool: React.FC<DirectTextEditToolProps> = ({
           <div className="relative shadow-2xl rounded border border-slate-700/80 bg-white overflow-hidden select-none">
             <canvas ref={canvasRef} className="block" />
 
-            {/* Overlaid Interactive Text Boxes */}
+            {/* Overlaid Interactive Text Boxes - Live In-Place Rendering */}
             <div className="absolute inset-0 pointer-events-auto">
               {detectedTexts.map((item) => {
                 const edit = edits.find(
-                  (e) => e.pageNumber === currentPage && e.pdfX === item.pdfX && e.pdfY === item.pdfY
+                  (e) => e.pageNumber === currentPage && Math.abs(e.pdfX - item.pdfX) < 2 && Math.abs(e.pdfY - item.pdfY) < 2
                 );
                 const isSelected = selectedText?.id === item.id;
 
+                // When currently editing this specific item inline:
+                if (isSelected) {
+                  return (
+                    <div
+                      key={item.id}
+                      style={{
+                        left: `${item.screenLeft - 2}px`,
+                        top: `${item.screenTop - 2}px`,
+                      }}
+                      className="absolute z-40 flex items-center gap-1"
+                    >
+                      <input
+                        type="text"
+                        autoFocus
+                        value={editingValue}
+                        onChange={(e) => setEditingValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleApplySingleEdit();
+                          if (e.key === 'Escape') setSelectedText(null);
+                        }}
+                        style={{
+                          fontSize: `${Math.max(10, (item.fontSize + fontSizeOffset) * scale)}px`,
+                          minWidth: `${Math.max(item.screenWidth + 16, 80)}px`,
+                          height: `${item.screenHeight + 4}px`,
+                        }}
+                        className="bg-white text-slate-950 font-sans border-2 border-brand-500 rounded px-1.5 shadow-2xl focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplySingleEdit}
+                        title="Confirmar alteração (Enter)"
+                        className="h-full px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold shadow flex items-center"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedText(null)}
+                        title="Cancelar (Esc)"
+                        className="h-full px-1.5 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs shadow flex items-center"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                }
+
+                // If already edited, render the replacement live covering the old text:
+                if (edit) {
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => handleSelectTextItem(item)}
+                      title={`Texto editado: "${edit.newText}" (Clique para alterar)`}
+                      style={{
+                        left: `${item.screenLeft - 1}px`,
+                        top: `${item.screenTop - 1}px`,
+                        minWidth: `${item.screenWidth + 2}px`,
+                        height: `${item.screenHeight + 2}px`,
+                      }}
+                      className="absolute z-20 bg-white border border-emerald-500/80 rounded px-1 shadow-sm flex items-center cursor-pointer group"
+                    >
+                      <span
+                        style={{
+                          fontSize: `${edit.fontSize * scale}px`,
+                          color: '#0F172A',
+                          lineHeight: 1,
+                        }}
+                        className="font-sans font-medium whitespace-nowrap"
+                      >
+                        {edit.newText}
+                      </span>
+                      <span className="absolute -top-3.5 left-0 text-[8px] font-mono font-bold bg-emerald-600 text-white px-1 rounded shadow opacity-90 group-hover:opacity-100">
+                        Ao Vivo
+                      </span>
+                    </div>
+                  );
+                }
+
+                // Unedited text item: clickable hover box
                 return (
                   <div
                     key={item.id}
                     onClick={() => handleSelectTextItem(item)}
-                    title={`Clique para editar: "${item.str}"`}
+                    title={`Clique para editar diretamente: "${item.str}"`}
                     style={{
                       left: `${item.screenLeft}px`,
                       top: `${item.screenTop}px`,
                       width: `${item.screenWidth}px`,
                       height: `${item.screenHeight}px`,
                     }}
-                    className={`absolute transition-all duration-150 cursor-pointer flex items-center ${
-                      isSelected
-                        ? 'ring-2 ring-brand-500 bg-brand-500/25 z-20'
-                        : edit
-                        ? 'bg-amber-400/30 border border-amber-500 z-10'
-                        : 'hover:bg-brand-500/20 hover:border hover:border-brand-500/60'
-                    }`}
-                  >
-                    {edit && (
-                      <span className="absolute -top-3.5 left-0 text-[9px] font-mono font-bold bg-amber-500 text-slate-950 px-1 rounded shadow">
-                        Editado
-                      </span>
-                    )}
-                  </div>
+                    className="absolute transition-all duration-100 cursor-pointer flex items-center hover:bg-brand-500/20 hover:border hover:border-brand-500/70 rounded"
+                  />
                 );
               })}
             </div>

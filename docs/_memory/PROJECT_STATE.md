@@ -2,7 +2,7 @@
 **OmniPDF Studio — Memória Contínua (Memory Architect Ledger)**
 
 > **Última Atualização:** 29/10/2026  
-> **Versão Corrente:** `v1.4.0`  
+> **Versão Corrente:** `v1.4.1`  
 > **Repositório GitHub:** `https://github.com/Henrique1601/OmniPDF-Studio`  
 > **Landing Page Oficial (Vercel):** `https://landing-topaz-ten-44.vercel.app` (Projeto: `prj_TNw1ze69DnSnfWrqqxJ62WrWhBY2`, Usuário: `henrique1601`)
 
@@ -19,6 +19,7 @@
 | **v1.2.0** | 28/10/2026 | Command Palette Universal (`Ctrl + K`) & Atalhos Globais de Teclado; Code Splitting & Lazy Loading (`React.lazy` + `Suspense`); Global Error Boundary no React; Taskbar JumpList do Windows e Barra de Progresso Nativa. |
 | **v1.2.1** | 28/10/2026 | **Diferenciação Visual Marcante dos 3 Temas Claros**: Branco Puro (#ffffff), Claro Suave / Prata (#e2e8f0) e Papel Nobre / Marfim (#f5efe6); **Correção Crítica dos Atalhos & Comandos**: Inserção ativa do listener global de teclado (`Ctrl+K`, `Ctrl+O`, `Ctrl+S`, `Ctrl+W`, `Ctrl+,`, `Ctrl+H`), listener direto de `onKeyDown` no input do Command Palette, busca sem acento (*fuzzy normalizer*) e mapeamento de todas as 23 ferramentas. |
 | **v1.3.0** | 29/10/2026 | **Tour Guiado & Onboarding Interativo para Iniciantes** (Modal visual em 6 passos amigáveis, navegação por teclado e persistência local); **Novas Configurações Expandidas** (Preferências reais de Visualização/Zoom, Painel lateral de miniaturas, Modo Leitura Noturna, Pastas e Sufixos de Exportação configuráveis, Limpeza de Dados/Privacidade e gatilho do Tour); Pontos de acesso no TopNav (ícone HelpCircle), HomeView (botão Hero) e primeiro acesso automático. |
+| **v1.4.1** | 29/10/2026 | **Refinamento Acrobat Studio & TrueEdit Ao Vivo**: (1) **Correção do Bug da Lixeira**: eliminação de criação acidental de novas caixas de texto ao excluir itens via stopPropagation e guards contextuais; (2) **Grifar & Censurar Híbrido Inteligente**: suporte duplo a detecção inteligente de palavras com hover e clique único + arraste de retângulo livre; (3) **TrueEdit In-Place ao Vivo**: edição direta sobre a página do PDF com input inline e substituição visual imediata no canvas sem necessidade de salvamento prévio. |
 | **v1.4.0** | 29/10/2026 | **Acrobat Live Studio & Overhaul de Ferramentas**: (1) **Notificações de Atualização Duplas**: Checagem automática no boot, polling periódico e fallback resiliente via API oficial do GitHub; (2) **HighlightTool Visão Completa**: Fim do corte vertical da página, zoom de ajuste à tela e seleção livre arrastando o mouse (Drag-to-Highlight); (3) **WatermarkTool com PDF Real & Ângulos Corrigidos**: Prévia ao vivo sobre a página real do PDF, rotação corrigida em sincronia matemática com o arquivo exportado, presets de cor e ângulo; (4) **PDF para Imagens em Lote**: Conversão de todas as páginas ou intervalos selecionados direto para uma pasta no Windows com barra de progresso nativa; (5) **Acrobat Live Studio**: Abertura direta do documento em espaço de trabalho unificado com todas as ferramentas ativas ao vivo (texto livre, marcação, tarja preta, assinatura e marca d'água com salvamento atômico Ctrl+S). |
 
 ---
@@ -33,3 +34,5 @@
 - **ADR-006 (Especificidade Igualitária dos Temas Claros):** Cada tema claro (`light-pure`, `light-slate`, `light-warm`) utiliza a regra de especificidade `html[data-theme="..."]`, eliminando sobrescrita indevida por classes genéricas e garantindo que o fundo prateado e o pergaminho marfim sejam 100% distintos do branco puro.
 - **ADR-007 (Onboarding Amigável & Acessibilidade para Leigos):** Introdução de um componente visual e interativo de boas-vindas (`AppTourModal`) com dicas práticas e linguagem acessível, garantindo que novos usuários aproveitem as ferramentas sem curva de aprendizado.
 - **ADR-008 (Adobe Acrobat Unified Live Workspace):** Transição de ferramentas puramente isoladas para um estúdio unificado ao vivo (`ReaderView` / Acrobat Studio), onde abrir qualquer PDF permite escrever textos livres, grifar, censurar dados com tarja preta, assinar e carimbar diretamente sobre o documento em tempo real com salvamento atômico em um único clique.
+
+- **ADR-009 (Modo Híbrido Inteligente & TrueEdit In-Place ao Vivo):** Ferramentas de anotação e edição agora combinam detecção vetorial/OCR automática (com destaque de palavras ao passar o mouse e aplicação em 1 clique) e liberdade analógica de seleção retangular livre por arraste, com renderização in-place ao vivo diretamente sobre o documento.
