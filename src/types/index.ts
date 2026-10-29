@@ -98,6 +98,9 @@ export interface DetectedTextItem {
   screenTop: number;
   screenWidth: number;
   screenHeight: number;
+  isOcr?: boolean;
+  confidence?: number;
+  sampledBgColor?: { r: number; g: number; b: number };
 }
 
 export interface TextEditItem {

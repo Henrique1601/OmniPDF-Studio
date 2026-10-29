@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Type, 
+  Type,
+  Camera,
+  ScanText, 
   Search, 
   RotateCw, 
   Download, 
@@ -39,6 +41,14 @@ export const DirectTextEditTool: React.FC<DirectTextEditToolProps> = ({
   const [fontSizeOffset, setFontSizeOffset] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
+  const [isScannedDoc, setIsScannedDoc] = useState<boolean>(false);
+  const [isOcrRunning, setIsOcrRunning] = useState<boolean>(false);
+  const [ocrProgress, setOcrProgress] = useState<number>(0);
+  const [ocrStatus, setOcrStatus] = useState<string>('');
+  const [ocrLevel, setOcrLevel] = useState<'words' | 'lines'>('words');
+  const [ocrLang, setOcrLang] = useState<string>(() => localStorage.getItem('omnipdf_ocr_lang') || 'por');
+  const [maskType, setMaskType] = useState<'auto' | 'white'>('auto');
+
 
   // Search & Replace states
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -111,6 +121,51 @@ export const DirectTextEditTool: React.FC<DirectTextEditToolProps> = ({
     setFontSizeOffset(0);
   };
 
+  
+  const handleRunManualOcr = async (forcedLevel?: 'words' | 'lines', forcedLang?: string) => {
+    if (!currentFile || !canvasRef.current) return;
+    const targetLevel = forcedLevel || ocrLevel;
+    const targetLang = forcedLang || ocrLang;
+
+    setLoading(true);
+    setIsOcrRunning(true);
+    setOcrProgress(10);
+    setOcrStatus('Executando OCR sob demanda...');
+
+    try {
+      const { items } = await PDFService.extractPageTextWithOcrFallback(
+        currentFile.data,
+        currentPage,
+        scale,
+        {
+          forceOcr: true,
+          lang: targetLang,
+          level: targetLevel,
+          pageCanvas: canvasRef.current,
+          onProgress: (p, s) => {
+            setOcrProgress(p);
+            setOcrStatus(s);
+          }
+        }
+      );
+      setDetectedTexts(items);
+      setIsScannedDoc(true);
+      onShowMessage(`OCR concluído: ${items.length} blocos de texto prontos para edição!`, 'success');
+    } catch (err: any) {
+      onShowMessage(`Falha no OCR: ${err.message}`, 'error');
+    } finally {
+      setLoading(false);
+      setIsOcrRunning(false);
+    }
+  };
+
+  const handleSwitchLevel = (newLevel: 'words' | 'lines') => {
+    setOcrLevel(newLevel);
+    if (isScannedDoc) {
+      handleRunManualOcr(newLevel);
+    }
+  };
+
   const handleApplySingleEdit = () => {
     if (!selectedText) return;
 
@@ -124,6 +179,7 @@ export const DirectTextEditTool: React.FC<DirectTextEditToolProps> = ({
       originalText: selectedText.str,
       newText: editingValue,
       fontSize: Math.max(8, selectedText.fontSize + fontSizeOffset),
+      bgColor: maskType === 'auto' && selectedText.sampledBgColor ? selectedText.sampledBgColor : { r: 1, g: 1, b: 1 },
     };
 
     setEdits((prev) => {
@@ -234,13 +290,13 @@ export const DirectTextEditTool: React.FC<DirectTextEditToolProps> = ({
         </div>
         <h3 className="text-xl font-bold text-white mb-2">Edição Direta de Texto do PDF (TrueEdit)</h3>
         <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
-          Edição direta in-place: clique em qualquer texto para abrir a caixa de edição ao vivo sobre a página, digite o novo texto e veja a alteração em tempo real.
+          Edição direta in-place para TUDO: PDFs digitais nativos, folhas digitalizadas (scans) e fotos tiradas com o celular de documentos físicos com OCR inteligente e máscara de fundo adaptativa.
         </p>
         <button
           onClick={onOpenFile}
           className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-lg shadow-brand-600/30 transition-all hover:scale-105 active:scale-95"
         >
-          Selecionar PDF para Editar
+          Selecionar PDF ou Foto de Papel (PNG, JPG)
         </button>
       </div>
     );
@@ -251,6 +307,22 @@ export const DirectTextEditTool: React.FC<DirectTextEditToolProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-950 overflow-hidden">
+
+      {/* OCR Progress Banner for Scanned Docs & Photos */}
+      {isOcrRunning && (
+        <div className="bg-amber-950/90 border-b border-amber-500/40 px-4 py-2 flex items-center justify-between text-xs text-amber-200 animate-pulse shrink-0">
+          <div className="flex items-center gap-2.5">
+            <span className="w-3.5 h-3.5 rounded-full border-2 border-amber-400 border-t-transparent animate-spin shrink-0" />
+            <span className="font-medium">{ocrStatus || 'Reconhecendo texto na digitalização ou foto de papel...'}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-28 h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-full bg-amber-400 transition-all duration-200" style={{ width: `${ocrProgress}%` }} />
+            </div>
+            <span className="font-mono text-[11px] font-bold">{ocrProgress}%</span>
+          </div>
+        </div>
+      )}
       {/* Top Toolbar: Navigation & Find/Replace */}
       <div className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between shrink-0 gap-4">
         {/* Page Nav */}
@@ -301,6 +373,51 @@ export const DirectTextEditTool: React.FC<DirectTextEditToolProps> = ({
             className="px-2.5 py-1 rounded bg-brand-600 hover:bg-brand-500 disabled:opacity-40 text-white text-[11px] font-semibold transition-colors shrink-0"
           >
             Substituir
+          </button>
+        </div>
+
+        
+        {/* OCR & Scanned Paper Controls */}
+        <div className="flex items-center gap-2">
+          {isScannedDoc && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/15 border border-amber-500/30 text-amber-300 rounded-xl text-[11px] font-semibold">
+              <Camera className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden md:inline">Foto/Scan</span>
+            </div>
+          )}
+
+          <div className="flex items-center bg-slate-950 px-1 py-1 rounded-xl border border-slate-800 text-[11px]">
+            <button
+              type="button"
+              onClick={() => handleSwitchLevel('words')}
+              title="Editar palavra por palavra"
+              className={`px-2 py-0.5 rounded-lg font-medium transition-colors ${
+                ocrLevel === 'words' ? 'bg-brand-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Palavras
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSwitchLevel('lines')}
+              title="Editar linhas inteiras"
+              className={`px-2 py-0.5 rounded-lg font-medium transition-colors ${
+                ocrLevel === 'lines' ? 'bg-brand-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Linhas
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleRunManualOcr()}
+            disabled={loading || isOcrRunning}
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs transition-colors disabled:opacity-40"
+            title="Executar OCR novamente para reconhecer todo o texto da foto"
+          >
+            <ScanText className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Reconhecer OCR</span>
           </button>
         </div>
 

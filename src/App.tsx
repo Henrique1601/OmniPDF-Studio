@@ -39,6 +39,7 @@ const FolderRagTool = lazy(() => import('./components/Tools/FolderRagTool').then
 
 import { ToolType, AppNavMode, PDFFileInfo, TaskHistoryItem } from './types';
 import { PDFService } from './services/pdfService';
+import { APP_VERSION } from './constants/version';
 import { ThemeService } from './services/themeService';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
@@ -141,11 +142,22 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  const loadPdfFromPath = async (filePath: string) => {
+    const loadPdfFromPath = async (filePath: string) => {
     try {
       if (!window.electronAPI) return;
-      const data = await window.electronAPI.readFile(filePath);
-      const name = filePath.split(/[\\/]/).pop() || 'documento.pdf';
+      let data = await window.electronAPI.readFile(filePath);
+      const originalName = filePath.split(/[\\/]/).pop() || 'documento.pdf';
+      const ext = originalName.split('.').pop()?.toLowerCase();
+      const isImage = ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'webp' || ext === 'bmp';
+
+      let name = originalName;
+      if (isImage) {
+        showToast(`Convertendo foto "${originalName}" para documento de alta resolução...`, 'success');
+        const pdfBytes = await PDFService.convertImageToPdf(data, originalName);
+        data = pdfBytes.buffer as ArrayBuffer;
+        name = `${originalName.replace(/\.[^/.]+$/, '')}.pdf`;
+      }
+
       const pageCount = await PDFService.getPageCount(data);
 
       const fileInfo: PDFFileInfo = {
@@ -160,8 +172,14 @@ export const App: React.FC = () => {
 
       setCurrentFile(fileInfo);
       addToRecents(fileInfo);
-      setCurrentTool('reader');
-      showToast(`Documento "${name}" aberto no Acrobat Studio!`, 'success');
+
+      if (isImage) {
+        setCurrentTool('trueedit');
+        showToast(`Foto "${originalName}" aberta no TrueEdit com OCR inteligente!`, 'success');
+      } else {
+        setCurrentTool('reader');
+        showToast(`Documento "${name}" aberto com sucesso!`, 'success');
+      }
     } catch (err: any) {
       showToast(`Erro ao abrir documento: ${err.message}`, 'error');
     }
@@ -393,7 +411,11 @@ export const App: React.FC = () => {
       if (window.electronAPI) {
         const filePaths = await window.electronAPI.openFileDialog({
           multiple: false,
-          filters: [{ name: 'Documentos PDF', extensions: ['pdf'] }],
+          filters: [
+            { name: 'Documentos PDF & Fotos (PNG, JPG, WEBP)', extensions: ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'bmp'] },
+            { name: 'Documentos PDF (*.pdf)', extensions: ['pdf'] },
+            { name: 'Fotos & Digitalizações (*.jpg, *.png)', extensions: ['png', 'jpg', 'jpeg', 'webp', 'bmp'] }
+          ],
         });
 
         if (filePaths && filePaths.length > 0) {
@@ -402,7 +424,7 @@ export const App: React.FC = () => {
       } else {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = 'application/pdf';
+        input.accept = 'application/pdf, image/png, image/jpeg, image/webp, image/bmp';
         input.onchange = async (e: any) => {
           const file: File = e.target.files?.[0];
           if (!file) return;

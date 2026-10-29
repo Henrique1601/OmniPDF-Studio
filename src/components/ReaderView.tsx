@@ -167,7 +167,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     )
       .then(async () => {
         try {
-          const texts = await PDFService.extractPageTextItems(file.data, currentPage, scale);
+          const { items: texts } = await PDFService.extractPageTextWithOcrFallback(file.data, currentPage, scale);
           if (!isCancelled) setDetectedTexts(texts);
         } catch {}
         if (!isCancelled) setLoading(false);

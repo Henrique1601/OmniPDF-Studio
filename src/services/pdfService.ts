@@ -1,3 +1,4 @@
+import { OCRService } from './ocrService';
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { DetectedTextItem, TextEditItem } from '../types';
@@ -448,6 +449,130 @@ export class PDFService {
   /**
    * Aplica alterações diretas de texto no PDF (substituição / TrueEdit)
    */
+  
+  /**
+   * Converte uma imagem única (foto de papel, digitalização) diretamente em PDF de alta resolução
+   */
+  static async convertImageToPdf(
+    imageData: ArrayBuffer,
+    fileName: string = 'documento.jpg'
+  ): Promise<Uint8Array> {
+    const ext = fileName.split('.').pop()?.toLowerCase() || 'jpg';
+    const isPng = ext === 'png';
+    const isJpg = ext === 'jpg' || ext === 'jpeg';
+
+    if (isPng || isJpg) {
+      try {
+        return await this.imagesToPdf([{ data: imageData, type: isPng ? 'image/png' : 'image/jpeg' }]);
+      } catch (e) {
+        console.warn('Erro ao embutir direto, convertendo via canvas:', e);
+      }
+    }
+
+    return new Promise((resolve, reject) => {
+      const blob = new Blob([imageData]);
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = async () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas context não disponível'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(async (pngBlob) => {
+          if (!pngBlob) {
+            reject(new Error('Falha ao converter imagem'));
+            return;
+          }
+          const buffer = await pngBlob.arrayBuffer();
+          const pdfBytes = await this.imagesToPdf([{ data: buffer, type: 'image/png' }]);
+          resolve(pdfBytes);
+        }, 'image/png', 1.0);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Não foi possível carregar a imagem'));
+      };
+      img.src = url;
+    });
+  }
+
+  /**
+   * Extrai blocos de texto da página. Se for uma digitalização ou foto (0 itens nativos),
+   * aciona o OCR inteligente offline com Tesseract para mapear cada palavra/linha milimetricamente.
+   */
+  static async extractPageTextWithOcrFallback(
+    data: ArrayBuffer,
+    pageNumber: number,
+    scale: number = 1.0,
+    options?: {
+      forceOcr?: boolean;
+      lang?: string;
+      level?: 'words' | 'lines';
+      pageCanvas?: HTMLCanvasElement | null;
+      onProgress?: (progress: number, status: string) => void;
+    }
+  ): Promise<{ items: DetectedTextItem[]; isScanned: boolean }> {
+    // 1. Tentar primeiro texto nativo se não for forçado
+    if (!options?.forceOcr) {
+      try {
+        const nativeItems = await this.extractPageTextItems(data, pageNumber, scale);
+        if (nativeItems.length > 0) {
+          return { items: nativeItems, isScanned: false };
+        }
+      } catch (err) {
+        console.warn('Erro ao extrair texto nativo:', err);
+      }
+    }
+
+    // 2. Documento é uma digitalização / foto de papel!
+    options?.onProgress?.(15, 'Digitalização ou foto detectada. Renderizando alta definição para OCR...');
+
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(data.slice(0)) });
+    const pdf = await loadingTask.promise;
+    const page = await pdf.getPage(pageNumber);
+    const viewport = page.getViewport({ scale });
+    const baseViewport = page.getViewport({ scale: 1.0 });
+
+    const ocrScale = 2.0;
+    const ocrViewport = page.getViewport({ scale: ocrScale });
+    const ocrCanvas = document.createElement('canvas');
+    ocrCanvas.width = ocrViewport.width;
+    ocrCanvas.height = ocrViewport.height;
+    const ocrCtx = ocrCanvas.getContext('2d');
+
+    if (!ocrCtx) {
+      throw new Error('Não foi possível obter contexto 2D para renderização de OCR.');
+    }
+
+    await page.render({
+      canvasContext: ocrCtx,
+      viewport: ocrViewport
+    }).promise;
+
+    const ocrItems = await OCRService.recognizeScannedPage(
+      ocrCanvas,
+      pageNumber,
+      {
+        lang: options?.lang,
+        level: options?.level || 'words',
+        pdfWidth: baseViewport.width,
+        pdfHeight: baseViewport.height,
+        screenWidth: viewport.width,
+        screenHeight: viewport.height,
+        pageCanvas: options?.pageCanvas || ocrCanvas,
+        onProgress: options?.onProgress
+      }
+    );
+
+    return { items: ocrItems, isScanned: true };
+  }
+
   static async applyTextEdits(
     data: ArrayBuffer,
     edits: TextEditItem[]
@@ -479,13 +604,14 @@ export class PDFService {
 
       // 2. Gravar o novo texto na posição exata
       const fg = edit.textColor || { r: 0, g: 0, b: 0 };
-      page.drawText(edit.newText, {
+      if (edit.newText && edit.newText.trim() !== '') { page.drawText(edit.newText, {
         x: edit.pdfX,
         y: edit.pdfY,
         size: edit.fontSize,
         font,
         color: rgb(fg.r, fg.g, fg.b),
       });
+      }
     }
 
     return await pdfDoc.save({ useObjectStreams: true });
